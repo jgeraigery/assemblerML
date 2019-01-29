@@ -24,7 +24,7 @@ import torchvision as tv
 import matplotlib.pyplot as plt
 import numpy as np
 
-class VAE (self, nn.Module):
+class VAE (nn.Module):
     def __init__(self):
         super().__init__()
         self.n_lat = 64
