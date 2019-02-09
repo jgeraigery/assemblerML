@@ -23,8 +23,8 @@ class motor:
         self.A = np.array([[0,1.0,0],[-(self.R*self.b-self.Km*self.Kb)/(self.L*self.J),-(self.L*self.b+self.R*self.J)/(self.L*self.J),0],self.C])
         self.B = np.array([[0],[self.Km/(self.L*self.J)],[0.0]])
         self.D = np.array([0.0])
-        self.Q = np.diag([1,0,10])
-        self.Rm = np.array([1])
+        self.Q = np.diag([10,0,0])
+        self.Rm = np.array([.0001])
         self.H = np.concatenate((np.concatenate((self.A,-self.B*np.array(1/self.Rm[0])*np.transpose(self.B)),axis = 1),np.concatenate((self.Q,-np.transpose(self.A)),axis = 1)),axis = 0)
         #[self.T,self.Z,numEigs] = la.schur(self.H, output = 'complex',sort = "lhp")
         #[self.W,self.Y,numEigs] = la.schur(self.H, output = 'real',sort = "lhp")
@@ -47,11 +47,11 @@ class motor:
         self.stateRes = np.zeros([self.xd.shape[0],len(self.t)])
         for i in range(len(self.t)):
             statedot = np.matmul(self.A,self.state) + np.matmul(self.B,self.getInput(i))
-            self.state += statedot
+            self.state += statedot*self.dT
             self.stateRes[:,i,None] = self.state
         plt.plot(self.t,self.stateRes[0,:],self.t,self.xd[0,:])
-        plt.axis([0,10,-1,1])
-        plt.show()
+        #plt.axis([0,10,-1,1])
+        #plt.show()
         
         
     def getInput(self,ind):
@@ -60,7 +60,7 @@ class motor:
         
 a = motor()
 t = np.arange(0,10,.01)
-y = np.sin(t)
-#y = np.ones_like(t)
+#y = np.sin(t)
+y = np.ones_like(t)
 a.genRefTraj(t,y)
 a.simulate()
