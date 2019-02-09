@@ -63,3 +63,5 @@ class VAE (nn.Module):
         std = torch.exp(.5, var)
         ran = torch.rand(std.size(0),-1)
         return mean + (std*ran)
+    
+    
