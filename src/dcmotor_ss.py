@@ -23,8 +23,8 @@ class motor:
         self.A = np.array([[0,1.0,0],[-(self.R*self.b-self.Km*self.Kb)/(self.L*self.J),-(self.L*self.b+self.R*self.J)/(self.L*self.J),0],self.C])
         self.B = np.array([[0],[self.Km/(self.L*self.J)],[0.0]])
         self.D = np.array([0.0])
-        self.Q = np.diag([100,0,.001])
-        self.Rm = np.array([.0001])
+        self.Q = np.diag([1000,0,100])
+        self.Rm = np.array([.00001])
         self.H = np.concatenate((np.concatenate((self.A,-self.B*np.array(1/self.Rm[0])*np.transpose(self.B)),axis = 1),np.concatenate((self.Q,-self.A.T),axis = 1)),axis = 0)
         #[self.T,self.Z,numEigs] = la.schur(self.H, output = 'complex',sort = "lhp")
         #[self.W,self.Y,numEigs] = la.schur(self.H, output = 'real',sort = "lhp")
@@ -39,8 +39,10 @@ class motor:
         self.t = t
         self.dT = t[1]-t[0]
         self.xd = np.zeros_like(t)
+        
         for i in range(len(t)):
             self.xd[i] = self.ud(t[i])
+        
         #self.xd = y
         self.ud = np.array(self.xd*(self.R*self.b-self.Km*self.Kb)/self.Km)
         #self.ud = np.zeros_like(self.xd)
@@ -53,7 +55,7 @@ class motor:
             self.state += statedot*self.dT
             self.stateRes[:,i,None] = self.state
         plt.plot(self.t,self.stateRes[0,:],self.t,self.xd[0,:])
-        #plt.axis([0,10,-1,1])
+        #plt.axis([0,1,-1.2,1.2])
         #plt.show()
     
     def ud(self,t):
@@ -65,6 +67,12 @@ class motor:
             return 3
         elif (t<4):
             return 9
+        elif (t<5):
+            return 7
+        elif (t<6):
+            return 5
+        elif (t<7):
+            return 1
         else:
             return 0
         
@@ -73,8 +81,8 @@ class motor:
         return np.matmul(-self.K,self.state-self.xd[:,ind,None]) + self.ud[ind]
         
 a = motor()
-t = np.arange(0,10,.01)
-y = np.sin(t)
+t = np.arange(0,10,.001)
+y = np.sin(2*np.pi*4*t)
 #y = np.ones_like(t)
 a.genRefTraj(t,y)
 a.simulate()
