@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class motor:
-    def __init__(self):
+    def __init__(self , rm ):
         self.L = .5
         self.R = 1
         self.J = .01
@@ -23,8 +23,8 @@ class motor:
         self.A = np.array([[0,1.0,0],[-(self.R*self.b-self.Km*self.Kb)/(self.L*self.J),-(self.L*self.b+self.R*self.J)/(self.L*self.J),0],self.C])
         self.B = np.array([[0],[self.Km/(self.L*self.J)],[0.0]])
         self.D = np.array([0.0])
-        self.Q = np.diag([1000,0,100])
-        self.Rm = np.array([.00001])
+        self.Q = np.diag([1000,0,10])
+        self.Rm = np.array([rm])
         self.H = np.concatenate((np.concatenate((self.A,-self.B*np.array(1/self.Rm[0])*np.transpose(self.B)),axis = 1),np.concatenate((self.Q,-self.A.T),axis = 1)),axis = 0)
         #[self.T,self.Z,numEigs] = la.schur(self.H, output = 'complex',sort = "lhp")
         #[self.W,self.Y,numEigs] = la.schur(self.H, output = 'real',sort = "lhp")
@@ -54,7 +54,11 @@ class motor:
             statedot = np.matmul(self.A,self.state) + np.matmul(self.B,self.getInput(i)) - np.array([[0],[0],[1]])*self.xd[0,i]
             self.state += statedot*self.dT
             self.stateRes[:,i,None] = self.state
-        plt.plot(self.t,self.stateRes[0,:],self.t,self.xd[0,:])
+        plt.plot(self.t,self.stateRes[0,:])
+
+    def plotRef(self):
+        plt.plot(self.t,self.xd[0,:])
+      
         #plt.axis([0,1,-1.2,1.2])
         #plt.show()
     
@@ -79,10 +83,28 @@ class motor:
     def getInput(self,ind):
         #print(np.matmul(-self.K,self.state-self.xd[:,1,None]) + self.ud[ind])
         return np.matmul(-self.K,self.state-self.xd[:,ind,None]) + self.ud[ind]
-        
-a = motor()
-t = np.arange(0,10,.001)
+
+t = np.arange(0,5,.001)
 y = np.sin(2*np.pi*4*t)
-#y = np.ones_like(t)
+
+a = motor( rm = .0001)
 a.genRefTraj(t,y)
+a.plotRef()
 a.simulate()
+
+b = motor( rm = .01)
+b.genRefTraj(t,y)
+b.simulate()
+
+c = motor( rm = 1)
+c.genRefTraj(t,y)
+c.simulate()
+
+
+d = motor( rm = 100)
+d.genRefTraj(t,y)
+d.simulate()
+
+plt.gca().legend(('setpt','r=.0001','r=.01','r=1','r=100'))
+
+#plt.plot(t,a.stateRes[0,:],'b--',t,b.stateRes[0,:],'r--')#,t,c.stateRes[0,:]'g--',t,d.stateRes[0,:],'k--')
