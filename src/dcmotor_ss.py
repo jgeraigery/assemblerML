@@ -106,5 +106,6 @@ d.genRefTraj(t,y)
 d.simulate()
 
 plt.gca().legend(('setpt','r=.0001','r=.01','r=1','r=100'))
+plt.show()
 
 #plt.plot(t,a.stateRes[0,:],'b--',t,b.stateRes[0,:],'r--')#,t,c.stateRes[0,:]'g--',t,d.stateRes[0,:],'k--')
