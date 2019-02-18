@@ -22,10 +22,10 @@ INPUT                   HIDDEN              OUTPUT
    x|t                                      Kp|t+1
    xdot|tC                                  Ki|T+1
    r|t+1                                    Kd|t+1
-   rdot|t+1 needed?     FC 64 - FC 3
+   rdot|t+1          FC 64 - FC 3
    ...
    r|t+L+1
-   rdot|t+L+1
+   rdot|t+L+1  (r/rdot)
    Kp|t
    Ki|t   
    Kd|t 
@@ -52,20 +52,25 @@ class motor:
         self.D = np.array([0.0])
         self.tC = tC
         self.dTc = tC[1]-tC[0]
+        
+        """
         self.tL = tC[0::10] #Neural net rate is 1/10 that of the control loop
         self.dTl = self.tL[1]-self.tL[0]
-        self.x0 = np.zeros((2,1))
+        """
+        
         self.state = np.zeros((2,1))
-        self.u = 0
         self.gains = np.ones((3,len(self.tC)))
         
-        def step
-            
-class pidnet (nn.Module):
-    def __init__():
-        blah = 0
+class pidRNN(nn.Module):
+    def __init__(self):
+        super(pidRNN,self).__init__(mot)
+        self.hiddenSize = 64
+        
+    def forward(self):
+        project = True
         
 t = np.arange(0,60,.01)
 mot = motor(t)
-y = np.sin(t)
-mot.simulate(y)
+r = np.sin(t)
+
+net = pidRNN(mot)
