@@ -53,24 +53,63 @@ class motor:
         self.tC = tC
         self.dTc = tC[1]-tC[0]
         
-        """
-        self.tL = tC[0::10] #Neural net rate is 1/10 that of the control loop
-        self.dTl = self.tL[1]-self.tL[0]
-        """
+        self.lastError = 0
+        self.currError = 0
+        self.totalError = 0
         
-        self.state = np.zeros((2,1))
-        self.gains = np.ones((3,len(self.tC)))
+        self.state = np.zeros([2,1])
+        self.statedot = np.zeros((2,1))
         
-class pidRNN(nn.Module):
-    def __init__(self):
-        super(pidRNN,self).__init__(mot)
-        self.hiddenSize = 64
+        self.gains = np.array([[125],[50],[5]])
+        self.simCount = 0
         
-    def forward(self):
-        project = True
-        
-t = np.arange(0,60,.01)
+    def getInput(self):
+        #Implement PID controller
+        return self.gains[0]*self.currError + self.gains[1]*self.totalError + self.gains[2]*(self.currError-self.lastError)/self.dTc
+    
+    def simulate(self,ref):
+        #Look for exisiting results, if doesn't exist create a new bin for them.  Structure is position in first row, velocity in second
+        self.state = np.zeros([2,1])
+        if (self.simCount == 0):
+            self.simulationResults = np.zeros((2,len(self.tC)))
+        else:
+            self.simulationResults = np.stack((self.simulationResults,np.zeros((2,len(self.tC)))))
+                
+        for i in range(len(self.tC)):
+            self.updateErrors(ref[i])
+            self.statedot = np.matmul(self.A,self.state) + self.B*self.getInput()
+            self.state += self.statedot*self.dTc
+            if self.simCount == 0:
+                self.simulationResults[:,i,None] = self.state
+            else:
+                self.simulationResults[self.simCount,:,i,None] = self.state
+            
+        self.simCount += 1
+        return
+    
+    def updateErrors(self,ref):
+        self.lastError = self.currError
+        self.currError = ref - self.state[0]
+        self.totalError += self.currError*self.dTc
+    
+     
+t = np.arange(0,10,.01)
 mot = motor(t)
-r = np.sin(t)
+r1 = np.sin(t)
+mot.simulate(r1)
+r2 = np.ones(len(t))
+r2[100:200]=2
+r2[300:400]=8
+r2[500:600]=0
+r2[700:800]=5
+r2[900:1000]=1
+mot.simulate(r2)
+plt.figure(0)
+plt.plot(t,r1,t,mot.simulationResults[0,0,:])
+plt.gca().legend(('setpt','motor'))
+plt.show()
+plt.figure(2)
+plt.plot(t,r2,t,mot.simulationResults[1,0,:])
+plt.gca().legend(('setpt','motor'))
+plt.show()
 
-net = pidRNN(mot)
