@@ -37,7 +37,7 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
-
+#Making small change to test VCS with gitlab and pycharm
 class motor:
     def __init__(self , tC ):
         self.L = .5
