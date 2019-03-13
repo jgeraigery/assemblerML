@@ -91,7 +91,12 @@ class motor:
         self.lastError = self.currError
         self.currError = ref - self.state[0]
         self.totalError += self.currError*self.dTc
-    
+
+class PIDnet(nn.module):
+    def __init__():
+        super(PIDnet,self).__init__()
+        
+
      
 t = np.arange(0,10,.01)
 mot = motor(t)
