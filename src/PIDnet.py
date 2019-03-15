@@ -29,7 +29,15 @@ INPUT                   HIDDEN              OUTPUT
    Kp|t
    Ki|t   
    Kd|t 
-    
+
+Try both with and without gains in the input to the next layer.
+
+state variables:
+  speed = x1
+  acceleration = x2
+
+
+
 
 """
 
@@ -92,10 +100,37 @@ class motor:
         self.currError = ref - self.state[0]
         self.totalError += self.currError*self.dTc
 
-class PIDnet(nn.module):
-    def __init__():
+class PIDnet(nn.Module):
+    def __init__(self, n_state = 2, n_hid = 64, n_steps = 6, incl_gains = False):
         super(PIDnet,self).__init__()
+        self.incl_gains = incl_gains
+        if incl_gains:
+            self.n_gains = 3
+        else:
+            self.n_gains = 0
+        self.hidden_size = n_hid
+        self.input_size = n_state + n_state*n_steps + self.n_gains
+        """
+        Network Layer Definitions
+            Start with one hidden layer.
+                   
         
+        """
+        self.i2h1 = nn.LeakyReLU(nn.Linear(self.input_size,self.hidden_size))
+        self.h12o = nn.LeakyReLU(nn.Linear(self.hidden_state,3))
+
+    def forward(self , inp , hid, gains):
+        if self.incl_gains:
+            hidden = self.i2h1(torch.cat(torch.cat(inp,hid,1),gains,1))
+        else:
+            hidden = self.i2h1(torch.cat(inp,hid,1))
+        output = self.h12o(hidden)
+        return output , hidden
+
+
+
+
+
 
      
 t = np.arange(0,10,.01)
@@ -110,10 +145,12 @@ r2[700:800]=5
 r2[900:1000]=1
 mot.simulate(r2)
 plt.figure(0)
+#Sine Wave Plot
+plt.subplot(1,2,1)
 plt.plot(t,r1,t,mot.simulationResults[0,0,:])
 plt.gca().legend(('setpt','motor'))
-plt.show()
-plt.figure(2)
+#Step Plots
+plt.subplot(1,2,2)
 plt.plot(t,r2,t,mot.simulationResults[1,0,:])
 plt.gca().legend(('setpt','motor'))
 plt.show()
