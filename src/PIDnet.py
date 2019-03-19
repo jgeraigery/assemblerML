@@ -37,6 +37,13 @@ state variables:
   acceleration = x2
 
 
+@TODO
+    -Weight normalization step
+    -noise to simulation output
+    -Inspect an existing RNN solution for ideas/pitfalls
+
+IDEAS
+    - Piece together trajectories to train on randomly (random selection of trajectory segments)
 
 
 """
@@ -46,6 +53,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 #Making small change to test VCS with gitlab and pycharm
+
 class motor:
     def __init__(self , tC ):
         self.L = .5
@@ -67,6 +75,8 @@ class motor:
         
         self.state = np.zeros([2,1])
         self.statedot = np.zeros((2,1))
+        self.result = np.zeros([2,len(self.tC)])
+        self.resultLoc = 0
         
         self.gains = np.array([[125],[50],[5]])
         self.simCount = 0
@@ -74,7 +84,19 @@ class motor:
     def getInput(self):
         #Implement PID controller
         return self.gains[0]*self.currError + self.gains[1]*self.totalError + self.gains[2]*(self.currError-self.lastError)/self.dTc
-    
+
+    def simulateStep( self , ref , simsteps = 1 ):
+        if self.resultLoc == 0 or self.resultLoc >= len(self.tC):
+            self.resultLoc = 0
+            self.state = np.zeros([2,1])
+        for i in range(simsteps):
+            self.updateErrors(ref)
+            self.statedot = np.matmul(self.A,self.state) + self.B*self.getInput()
+            self.state += self.statedot*self.dTc
+            self.result[:,self.resultLoc,None] = self.state
+            self.resultLoc += 1
+        return self.state
+    """
     def simulate(self,ref):
         #Look for exisiting results, if doesn't exist create a new bin for them.  Structure is position in first row, velocity in second
         self.state = np.zeros([2,1])
@@ -94,7 +116,7 @@ class motor:
             
         self.simCount += 1
         return
-    
+    """
     def updateErrors(self,ref):
         self.lastError = self.currError
         self.currError = ref - self.state[0]
@@ -113,11 +135,11 @@ class PIDnet(nn.Module):
         """
         Network Layer Definitions
             Start with one hidden layer.
-                   
+            weight normalizations!
         
         """
         self.i2h1 = nn.LeakyReLU(nn.Linear(self.input_size,self.hidden_size))
-        self.h12o = nn.LeakyReLU(nn.Linear(self.hidden_state,3))
+        self.h12o = nn.LeakyReLU(nn.Linear(self.hidden_size,3))
 
     def forward(self , inp , hid, gains):
         if self.incl_gains:
@@ -127,19 +149,19 @@ class PIDnet(nn.Module):
         output = self.h12o(hidden)
         return output , hidden
 
+    def newHidden(self):
+        return torch.zeros(1,self.hidden_size)
+
+    """
+        At start I have:
+            - State
+            - 
+
+    """
+
+pid = PIDnet()
+
 """
-Each loop during training will do the following things:
-    - 
-"""
-
-    def train(self, num_epochs = 1  , num_iters = 1000):
-        for epoch in np.arange(num_epochs):
-            for count in np.arange(num_iters):
-
-                return
-
-
-
 t = np.arange(0,10,.01)
 mot = motor(t)
 r1 = np.sin(t)
@@ -161,4 +183,4 @@ plt.subplot(1,2,2)
 plt.plot(t,r2,t,mot.simulationResults[1,0,:])
 plt.gca().legend(('setpt','motor'))
 plt.show()
-
+"""
