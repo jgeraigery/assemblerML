@@ -127,12 +127,19 @@ class PIDnet(nn.Module):
         output = self.h12o(hidden)
         return output , hidden
 
+"""
+Each loop during training will do the following things:
+    - 
+"""
+
+    def train(self, num_epochs = 1  , num_iters = 1000):
+        for epoch in np.arange(num_epochs):
+            for count in np.arange(num_iters):
+
+                return
 
 
 
-
-
-     
 t = np.arange(0,10,.01)
 mot = motor(t)
 r1 = np.sin(t)
