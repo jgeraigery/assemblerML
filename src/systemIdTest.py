@@ -60,8 +60,11 @@ class IdNet(nn.Module):
 
 
 def getControlInput():
-    out = np.random.rand() * 20 - 5
+    out = np.random.rand() * 20 - 10
     return out
+
+
+
 
 
 m = Motor()
@@ -69,13 +72,14 @@ dT = .001
 m.setTimeStep(dT)
 sn = IdNet(3)
 criterion = nn.MSELoss()
-optimizer = torch.optim.SGD(sn.parameters(), lr=.01, momentum=0)
-result = np.zeros([5,1])
+optimizer = torch.optim.SGD(sn.parameters(), lr=.00001, momentum=0.5)
+result = np.zeros([6,1])
 sn.zero_grad()
+printDuring = False
 
-for i in np.arange(0, 25000):
+for i in np.arange(0, 1000000):
     # control input function
-    if ( np.mod(i,20) == 0 ):
+    if ( np.mod(i,200) == 0 ):
         controlInput = getControlInput()
 
     stateTensor = torch.from_numpy(m.state)
@@ -88,13 +92,14 @@ for i in np.arange(0, 25000):
     outBar = m.step(controlInput)
     outBar = torch.from_numpy(outBar).float()
     #Store result
-    tmpResult = np.empty([5,1])
-    tmpResult[0] = dT*i
+    tmpResult = np.empty([6,1])
+    tmpResult[0] = dT*(i+1)
     #print(out[0][0].item())
     tmpResult[1] = out[0][0].item()
     tmpResult[2] = outBar[0][0].item()
     tmpResult[3] = out[0][1].item()
     tmpResult[4] = outBar[0][1].item()
+    tmpResult[5] = controlInput
     result = np.concatenate((result,tmpResult),1)
     loss = criterion(outBar, out)
     #print(loss)
@@ -102,24 +107,25 @@ for i in np.arange(0, 25000):
         #sn.zero_grad()
         optimizer.zero_grad()
         pass
-    printDuring = True
+
     # backward passes accumulate gradients, need to zero them each time (unless it's an RNN)
     loss.backward()
+    nn.utils.clip_grad_norm_(sn.parameters(),10)
     #Clip gradient here?
     optimizer.step()
     if np.mod(i,100) == 0 and printDuring:
         plt.figure(1)
         plt.clf()
-        plt.subplot(1,2,1)
+        plt.subplot(2,1,1)
         plt.plot(result[0], result[1], result[0], result[2])
-        plt.subplot(1,2,2)
+        plt.subplot(2,1,2)
         plt.plot(result[0], result[3], result[0], result[4])
         plt.draw()
         plt.pause(.001)
 plt.ioff()
 plt.figure(2)
-plt.subplot(1, 2, 1)
+plt.subplot(2, 1, 1)
 plt.plot(result[0], result[1], result[0], result[2])
-plt.subplot(1, 2, 2)
+plt.subplot(2, 1, 2)
 plt.plot(result[0], result[3], result[0], result[4])
 plt.show()
