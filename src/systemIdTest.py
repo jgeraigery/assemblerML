@@ -53,18 +53,21 @@ class IdNet(nn.Module):
 
     def forward(self, inp):
         tmp = F.leaky_relu(self.fc1(inp))
-
         tmp = F.leaky_relu(self.fc2(tmp))
-
+        #tmp = torch.tanh(self.fc1(inp))
+        #tmp = torch.tanh(self.fc2(tmp))
         return self.fc3(tmp)
+
+
+class RnnIdNet(nn.Module):
+    def __init__ (self, num_inputs ):
+        super(RnnIdNet, self).__init__()
+        self.num_inputs = num_inputs
 
 
 def getControlInput():
     out = np.random.rand() * 20 - 10
     return out
-
-
-
 
 
 m = Motor()
@@ -75,7 +78,7 @@ criterion = nn.MSELoss()
 optimizer = torch.optim.SGD(sn.parameters(), lr=.00001, momentum=0.5)
 result = np.zeros([6,1])
 sn.zero_grad()
-printDuring = False
+printDuring = True
 
 for i in np.arange(0, 1000000):
     # control input function
@@ -110,22 +113,22 @@ for i in np.arange(0, 1000000):
 
     # backward passes accumulate gradients, need to zero them each time (unless it's an RNN)
     loss.backward()
-    nn.utils.clip_grad_norm_(sn.parameters(),10)
+    torch.nn.utils.clip_grad_norm_(sn.parameters(),10)
     #Clip gradient here?
     optimizer.step()
-    if np.mod(i,100) == 0 and printDuring:
+    if np.mod(i,50) == 0 and printDuring:
         plt.figure(1)
         plt.clf()
         plt.subplot(2,1,1)
-        plt.plot(result[0], result[1], result[0], result[2])
+        plt.plot(result[0], result[1], result[0], result[2])#, result[0], result[5])
         plt.subplot(2,1,2)
-        plt.plot(result[0], result[3], result[0], result[4])
+        plt.plot(result[0], result[3], result[0], result[4])#, result[0], result[5])
         plt.draw()
         plt.pause(.001)
 plt.ioff()
 plt.figure(2)
 plt.subplot(2, 1, 1)
-plt.plot(result[0], result[1], result[0], result[2])
+plt.plot(result[0], result[1], result[0], result[2], result[0], result[5])
 plt.subplot(2, 1, 2)
-plt.plot(result[0], result[3], result[0], result[4])
+plt.plot(result[0], result[3], result[0], result[4], result[0], result[5])
 plt.show()
