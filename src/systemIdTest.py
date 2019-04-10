@@ -72,10 +72,13 @@ class RnnIdNet(nn.Module):
         self.fc3 = nn.Linear(self.hidden2_size,2)
 
     def forward(self, inp):
-        self.hidden = F.leaky_relu(self.fc1(torch.cat((inp,self.hidden),1)))
-        tmp = F.leaky_relu(self.fc2(self.hidden))
+        self.hidden = F.tanh(self.fc1(torch.cat((inp,self.hidden),1)))
+        tmp = F.tanh(self.fc2(self.hidden))
         return self.fc3(tmp)
 
+    def initHidden(self):
+        self.hidden = torch.zeros(1,self.hidden_size)
+        return
 
 def getControlInput():
     out = np.random.rand() * 20 - 10
@@ -85,16 +88,16 @@ def getControlInput():
 m = Motor()
 dT = .001
 m.setTimeStep(dT)
-sn = RnnIdNet(3,64)
+sn = RnnIdNet(3,128)
 criterion = nn.MSELoss()
-optimizer = torch.optim.SGD(sn.parameters(), lr=.001, momentum=0.05)
+optimizer = torch.optim.Adam(sn.parameters(),lr=.00005)
 result = np.zeros([6,1])
 sn.zero_grad()
 printDuring = True
 
-for i in np.arange(0, 1000):
+for i in np.arange(0, 500000):
     # control input function
-    if ( np.mod(i,200) == 0 ):
+    if ( np.mod(i,50) == 0 ):
         controlInput = getControlInput()
 
 
@@ -115,18 +118,23 @@ for i in np.arange(0, 1000):
     tmpResult[5] = controlInput
     result = np.concatenate((result,tmpResult),1)
     loss = criterion(outBar, out)
+    #print(loss.item())
     #print(loss)
-    if ( np.mod(i,5)) == 0:
-        #sn.zero_grad()
+    if ( np.mod(i,50)) == 0:
+        #sn.initHidden()
+        sn.zero_grad()
         #optimizer.zero_grad()
         pass
 
     # backward passes accumulate gradients, need to zero them each time (unless it's an RNN)
+    #
     loss.backward(retain_graph=True)
-    torch.nn.utils.clip_grad_norm_(sn.parameters(),10)
+    #torch.nn.utils.clip_grad_norm_(sn.parameters(),5)
     #Clip gradient here?
     optimizer.step()
-    if np.mod(i,1) == 0 and printDuring:
+
+    if np.mod(i,50) == 0 and printDuring:
+
         plt.figure(1)
         plt.clf()
         plt.subplot(2,1,1)
