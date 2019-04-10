@@ -60,9 +60,21 @@ class IdNet(nn.Module):
 
 
 class RnnIdNet(nn.Module):
-    def __init__ (self, num_inputs ):
+    def __init__ (self, num_inputs, hidden_size ):
         super(RnnIdNet, self).__init__()
         self.num_inputs = num_inputs
+        self.hidden_size = hidden_size
+        self.hidden2_size = int(hidden_size/2)
+        self.hidden = torch.zeros([1,self.hidden_size])
+        self.output_size = 2
+        self.fc1 = nn.Linear(self.num_inputs + self.hidden_size,self.hidden_size)
+        self.fc2 = nn.Linear(self.hidden_size, self.hidden2_size)
+        self.fc3 = nn.Linear(self.hidden2_size,2)
+
+    def forward(self, inp):
+        self.hidden = F.leaky_relu(self.fc1(torch.cat((inp,self.hidden),1)))
+        tmp = F.leaky_relu(self.fc2(self.hidden))
+        return self.fc3(tmp)
 
 
 def getControlInput():
@@ -73,23 +85,21 @@ def getControlInput():
 m = Motor()
 dT = .001
 m.setTimeStep(dT)
-sn = IdNet(3)
+sn = RnnIdNet(3,64)
 criterion = nn.MSELoss()
-optimizer = torch.optim.SGD(sn.parameters(), lr=.00001, momentum=0.5)
+optimizer = torch.optim.SGD(sn.parameters(), lr=.001, momentum=0.05)
 result = np.zeros([6,1])
 sn.zero_grad()
 printDuring = True
 
-for i in np.arange(0, 1000000):
+for i in np.arange(0, 1000):
     # control input function
     if ( np.mod(i,200) == 0 ):
         controlInput = getControlInput()
 
+
     stateTensor = torch.from_numpy(m.state)
-    # print(stateTensor)
     stateTensor = torch.cat((stateTensor, torch.from_numpy(np.ones([1,1], dtype=float) * controlInput)), 1).float()
-    #print(stateTensor)
-    # print(type(stateTensor))
     out = sn.forward(stateTensor)
     # print(out)
     outBar = m.step(controlInput)
@@ -108,15 +118,15 @@ for i in np.arange(0, 1000000):
     #print(loss)
     if ( np.mod(i,5)) == 0:
         #sn.zero_grad()
-        optimizer.zero_grad()
+        #optimizer.zero_grad()
         pass
 
     # backward passes accumulate gradients, need to zero them each time (unless it's an RNN)
-    loss.backward()
+    loss.backward(retain_graph=True)
     torch.nn.utils.clip_grad_norm_(sn.parameters(),10)
     #Clip gradient here?
     optimizer.step()
-    if np.mod(i,50) == 0 and printDuring:
+    if np.mod(i,1) == 0 and printDuring:
         plt.figure(1)
         plt.clf()
         plt.subplot(2,1,1)
