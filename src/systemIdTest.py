@@ -72,8 +72,8 @@ class RnnIdNet(nn.Module):
         self.fc3 = nn.Linear(self.hidden2_size,2)
 
     def forward(self, inp):
-        self.hidden = F.tanh(self.fc1(torch.cat((inp,self.hidden),1)))
-        tmp = F.tanh(self.fc2(self.hidden))
+        self.hidden = torch.tanh(self.fc1(torch.cat((inp,self.hidden),1)))
+        tmp = torch.tanh(self.fc2(self.hidden))
         return self.fc3(tmp)
 
     def initHidden(self):
@@ -88,7 +88,8 @@ def getControlInput():
 m = Motor()
 dT = .001
 m.setTimeStep(dT)
-sn = RnnIdNet(3,128)
+#sn = RnnIdNet(3,128)
+sn = IdNet(3)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(sn.parameters(),lr=.00005)
 result = np.zeros([6,1])
@@ -128,8 +129,9 @@ for i in np.arange(0, 500000):
 
     # backward passes accumulate gradients, need to zero them each time (unless it's an RNN)
     #
-    loss.backward(retain_graph=True)
-    #torch.nn.utils.clip_grad_norm_(sn.parameters(),5)
+    #loss.backward(retain_graph=True)
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(sn.parameters(),5)
     #Clip gradient here?
     optimizer.step()
 
