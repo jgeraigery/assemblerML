@@ -1,0 +1,18 @@
+"""
+@author: Anand Ramakrishnan
+
+
+
+"""
+
+I will be maintaining individual documents for each of the results. Current List of Documents and Folders present.
+
+Documentation:
+1. Documentation-SystemID-Results: Contains the results of each model under different noise values.
+
+Folders:
+1. LR: Simple Linear Regressor
+2. Arima: Arima Model for Time Series data
+3. RNN: RNN that predicts that takes in the current time step and predicts next time step.
+4. RNN10: RNN that takes in the past 10 time steps and predicts next time step.   
+

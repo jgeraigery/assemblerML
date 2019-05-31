@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Feb  7 18:29:38 2019
+
+@author: Kent Evans
+
+"""
+
+import scipy.linalg as la
+import numpy as np
+
+class system:
+    """
+    
+    This system is 
+    
+    """
+    def __init__( self ):
+        self.L = .5     #Inductance
+        self.R = 1      #Resistance
+        self.Kb = .01   #Back-EMF Coefficient
+        self.Km = .01   #Motor Constant
+        self.J = .01    #Moment of Inertia
+        self.b = .1     #Damping Coefficient
