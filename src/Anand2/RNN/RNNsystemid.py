@@ -195,7 +195,7 @@ plt.savefig("RNNSystemid.svg")
 #AutoCorrelation Residual Plot State-0
 
 plt.clf()
-residuals = pd.DataFrame((result[2]-result[1])[10000:])
+residuals = pd.DataFrame((result[2]-result[1])[10001:])
 autocorrelation_plot(residuals)
 plt.show()
 plt.savefig("RNNAutoCorrelationState0.svg")
@@ -209,7 +209,7 @@ plt.clf()
 
 #AutoCorrelation Residual Plot State-1
 
-residuals = pd.DataFrame((result[4]-result[3])[10000:])
+residuals = pd.DataFrame((result[4]-result[3])[10001:])
 autocorrelation_plot(residuals)
 plt.show()
 plt.savefig("RNNAutoCorrelationState1.svg")
@@ -222,9 +222,30 @@ plt.show()
 plt.savefig("RNNQQState1.svg")
 plt.clf()
 
+def NormCrossCorr(a,b,mode='same'):
+	a = (a - np.mean(a)) / (np.std(a) * len(a))
+	b = (b - np.mean(b)) / (np.std(b))
+	c = np.correlate(a, b, mode)
+	return c
+#CrossCorrelation Check
+crosscorr=NormCrossCorr(result[2,10001:],result[1,10001:],mode="same")
+plt.plot(np.arange(-20000,20000),crosscorr,c="k",linewidth="4",label="CrossCorrelation")
+plt.show()
+plt.savefig("CrossCorrelationState0.svg")
+plt.clf()
+
+print "CrossCorr Time Lag", crosscorr[np.where(crosscorr>=0.95)],(np.arange(-20000,20000))[np.where(crosscorr>=0.95)]
+
+crosscorr=NormCrossCorr(result[4,10001:],result[3,10001:],mode="same")
+plt.plot(np.arange(-20000,20000),crosscorr,c="k",linewidth="4",label="CrossCorrelation")
+plt.show()
+plt.savefig("CrossCorrelationState1.svg")
+plt.clf()
+
+print "CrossCorr Time Lag", crosscorr[np.where(crosscorr>=0.95)],(np.arange(-20000,20000))[np.where(crosscorr>=0.95)]
 
 
-print "Velocity Error:",np.sqrt(np.mean((result[1,10000:]-result[2,10000:])**2))
-print "Acceleration Error:",np.sqrt(np.mean((result[3,10000:]-result[4,10000:])**2))
+print "Velocity Error:",np.sqrt(np.mean((result[1,10001:]-result[2,10001:])**2))
+print "Acceleration Error:",np.sqrt(np.mean((result[3,10001:]-result[4,10001:])**2))
 
 

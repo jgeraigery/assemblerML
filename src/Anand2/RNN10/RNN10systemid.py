@@ -79,11 +79,11 @@ class Motor:
         noise= np.zeros([1,2],dtype=float)
         noise[:,:]=np.random.normal(0.0, 1, 2)
         #print noisedot,noisedot.shape,self.stateDot.shape
-        print(self.stateDot)
+        #print(self.stateDot)
         self.stateDot+=noisedot.transpose()
         self.state += self.stateDot.transpose() * self.dT
         self.state+=noise
-        print self.state
+        #print self.state
         return self.state
 
 
@@ -112,7 +112,7 @@ def densemodel():
 
 
 def rnnmodel():
-        input = Input(batch_shape=(None,10,3))
+        input = Input(batch_shape=(None,100,3))
         x=SimpleRNN(100,activation="relu")(input)
         output = Dense(2)(x)
         model = Model(inputs=input, outputs=output)
@@ -130,12 +130,12 @@ printDuring=False
 
 X=[]
 y=[]
-movingvalue=np.zeros((10,3))
+movingvalue=np.zeros((100,3))
 
 for i in np.arange(0, 50000):
     # control input function
     if ( np.mod(i,50) == 0 ):
-        print "Loop-",i
+        print ("Loop-",i)
 	controlInput=0
 	if i%1000==0 and i!=0:
         	controlInput = 5
@@ -146,8 +146,8 @@ for i in np.arange(0, 50000):
     stateTensor =(m.state)
     stateTensor = np.concatenate((stateTensor,(np.ones([1,1], dtype=float) * controlInput)), 1)
     outBar=m.step(controlInput)
-    movingvalue[0:9,:]=movingvalue[1:10,:]
-    movingvalue[9,:]=stateTensor
+    movingvalue[0:99,:]=movingvalue[1:100,:]
+    movingvalue[99,:]=stateTensor
     movingvalue2=np.asarray(list(movingvalue))
     if i<10000:
         out=np.zeros((1,2))
@@ -159,8 +159,8 @@ for i in np.arange(0, 50000):
 	adam=keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 	model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
     elif i>10000:
-    	out=model.predict(movingvalue2.reshape(1,10,3))
-    	model.fit(movingvalue2.reshape(1,10,3),outBar,epochs=1)
+    	out=model.predict(movingvalue2.reshape(1,100,3))
+    	model.fit(movingvalue2.reshape(1,100,3),outBar,epochs=1)
     else:
 	continue
     tmpResult = np.empty([6,1])
@@ -249,8 +249,8 @@ plt.clf()
 
 
 
-print "Velocity Error:",np.sqrt(np.mean((result[1,10000:]-result[2,10000:])**2))
-print "Acceleration Error:",np.sqrt(np.mean((result[3,10000:]-result[4,10000:])**2))
+print ("Velocity Error:",np.sqrt(np.mean((result[1,10000:]-result[2,10000:])**2)))
+print ("Acceleration Error:",np.sqrt(np.mean((result[3,10000:]-result[4,10000:])**2)))
 
 
 
