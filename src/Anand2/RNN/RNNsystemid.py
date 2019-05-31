@@ -20,6 +20,12 @@ import numpy as np
 import h5py
 import pickle, math
 
+from pandas.tools.plotting import autocorrelation_plot
+#from statsmodels.graphics.gofplots import qqplot
+
+from scipy.stats import probplot as qqplot
+
+
 import keras
 from keras.layers.advanced_activations import LeakyReLU, PReLU,ELU
 from keras.preprocessing.image import ImageDataGenerator
@@ -42,15 +48,12 @@ from sklearn.metrics import mean_squared_error as mse
 np.random.seed(1)
 
 
+
 class Motor:
     def __init__(self):
         self.L = .5
         self.R = 1
-<<<<<<< HEAD
         self.J = 0.01
-=======
-        self.J = .01
->>>>>>> cf7c18ea2072e20a32a5f15aecd1da54d5f6ea18
         self.b = .1
         self.Kb = .01
         self.Km = .01
@@ -68,31 +71,17 @@ class Motor:
         self.dT = dT
         return
 
-<<<<<<< HEAD
-
     def step(self, u):
         self.stateDot = np.matmul(self.A, self.state.transpose()) + self.B * u
         noisedot= np.zeros([1,2],dtype=float)
-        noisedot[:,:]=np.random.normal(0.0, 0.5, 2)
+        noisedot[:,:]=np.random.normal(0.0, 1, 2)
         noise= np.zeros([1,2],dtype=float)
-        noise[:,:]=np.random.normal(0.0, 0.5, 2)
+        noise[:,:]=np.random.normal(0.0, 1, 2)
         #print noisedot,noisedot.shape,self.stateDot.shape
-        print(self.stateDot)
         self.stateDot+=noisedot.transpose()
         self.state += self.stateDot.transpose() * self.dT
         self.state+=noise
-        print self.state
         return self.state
-
-
-=======
-    def step(self, u):
-        self.stateDot = np.matmul(self.A, self.state.transpose()) + self.B * u
-        #print(self.stateDot)
-        self.state += self.stateDot.transpose() * self.dT
-	#print self.state
-        return self.state
->>>>>>> cf7c18ea2072e20a32a5f15aecd1da54d5f6ea18
     def update(self):
         self.C = np.array([1.0, 0])
         self.A = np.array([[0, 1.0], [-(self.R * self.b - self.Km * self.Kb) / (self.L * self.J),
@@ -138,19 +127,15 @@ X=[]
 y=[]
 
 for i in np.arange(0, 50000):
-    # control input function
+    # StepWise control input function
     if ( np.mod(i,50) == 0 ):
         print "Loop-",i
-	controlInput=0
-	if i%1000==0 and i!=0:
-        	controlInput = 5
-        	#controlInput = getControlInput()
+        controlInput=0
+        if i%1000==0 and i!=0:
+                controlInput = 5
+
     if (i%10000==0):
-<<<<<<< HEAD
 	#m.J=m.J+0.1
-=======
-	m.J=m.J+0.1
->>>>>>> cf7c18ea2072e20a32a5f15aecd1da54d5f6ea18
 	m.update()
     stateTensor =(m.state)
     stateTensor = np.concatenate((stateTensor,(np.ones([1,1], dtype=float) * controlInput)), 1)
@@ -161,12 +146,8 @@ for i in np.arange(0, 50000):
         y.append(outBar)
     elif i==10000:
         out=np.zeros((1,2))
-<<<<<<< HEAD
         model.fit(np.asarray(X),(np.asarray(y)).reshape(10000,2),epochs=30)
-=======
-        model.fit(np.asarray(X),(np.asarray(y)).reshape(10000,2),epochs=20)
->>>>>>> cf7c18ea2072e20a32a5f15aecd1da54d5f6ea18
-	adam=keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+	adam=keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 	model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
     elif i>10000:
     	out=model.predict(stateTensor.reshape(1,1,3))
@@ -194,11 +175,11 @@ for i in np.arange(0, 50000):
 
 plt.figure(3)
 plt.subplot(3, 1, 1)
-plt.plot(result[0], result[1],c="k",label="Pred")
+plt.plot(result[0], result[1],c="k",linewidth="4",label="Pred")
 plt.plot( result[0], result[2],c="r",label="True")
 plt.ylabel("State 0")
 plt.subplot(3, 1, 2)
-plt.plot(result[0], result[3],c="k",label="Pred")
+plt.plot(result[0], result[3],c="k",linewidth="4",label="Pred")
 plt.plot(result[0], result[4],c="r",label="True")
 plt.ylabel("State 1")
 plt.legend(loc="upper right")
@@ -208,12 +189,42 @@ plt.ylabel("Control Input")
 plt.xlabel("Time")
 plt.legend(loc="upper right")
 plt.show()
-plt.savefig("RNNSystemidtest.svg")
+plt.savefig("RNNSystemid.svg")
+
+
+#AutoCorrelation Residual Plot State-0
+
+plt.clf()
+residuals = pd.DataFrame((result[2]-result[1])[10000:])
+autocorrelation_plot(residuals)
+plt.show()
+plt.savefig("RNNAutoCorrelationState0.svg")
+plt.clf()
+
+#QQPlot Residuals State-0
+qqplot((np.array(residuals)).flatten(),plot=plt)
+plt.show()
+plt.savefig("RNNQQState0.svg")
+plt.clf()
+
+#AutoCorrelation Residual Plot State-1
+
+residuals = pd.DataFrame((result[4]-result[3])[10000:])
+autocorrelation_plot(residuals)
+plt.show()
+plt.savefig("RNNAutoCorrelationState1.svg")
+plt.clf()
+
+#QQPlot Residuals State-1
+
+qqplot((np.array(residuals)).flatten(),plot=plt)
+plt.show()
+plt.savefig("RNNQQState1.svg")
+plt.clf()
+
+
 
 print "Velocity Error:",np.sqrt(np.mean((result[1,10000:]-result[2,10000:])**2))
 print "Acceleration Error:",np.sqrt(np.mean((result[3,10000:]-result[4,10000:])**2))
 
-
-np.save("RNNresult.npy",result)
-print m.b
 

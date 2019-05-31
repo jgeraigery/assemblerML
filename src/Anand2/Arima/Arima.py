@@ -149,8 +149,8 @@ for i in np.arange(0, 50000):
     if i<10000:
         out=np.zeros((1,2))
     elif i>=10000:
-	model = auto_arima(np.array(X)[:,:,0], start_p=1, start_q=1,max_p=3, max_q=3, m=0,start_P=0,d=1, D=1, trace=True,seasonal=True,error_action="ignore",suppress_warnings=True,stepwise=True)
-	model2 = auto_arima(np.array(X)[:,:,1], start_p=1, start_q=1,max_p=3, max_q=3, m=0,start_P=0,d=1, D=1, trace=True,seasonal=True,error_action="ignore",suppress_warnings=True,stepwise=True)
+	model = auto_arima(np.array(X)[:,:,0], start_p=1, start_q=1,max_p=3, max_q=3, m=1,start_P=0,d=1, D=1, trace=True,seasonal=False,error_action="ignore",suppress_warnings=True,stepwise=True)
+	model2 = auto_arima(np.array(X)[:,:,1], start_p=1, start_q=1,max_p=3, max_q=3, m=1,start_P=0,d=1, D=1, trace=True,seasonal=False,error_action="ignore",suppress_warnings=True,stepwise=True)
 	model.fit(np.asarray(X)[:,:,0])
     	out[0][0]=model.predict(n_periods=1)
 	model2.fit(np.asarray(X)[:,:,1])
