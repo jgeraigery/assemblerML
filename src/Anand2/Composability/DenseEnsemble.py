@@ -2,14 +2,24 @@
 # train and test directories of the dataset need to be present in the root directory
 # weights need to be present in a weights folder in the root directory
 
+
 from Problems.DCMotor import* 
-from Models.DenseModel import* 
+from Models.Dense import* 
 from Operators.Ensemble import* 
 
 m = Motor()
 dT = .001
 m.setTimeStep(dT)
-model = rnnmodel()
+model1 = DenseModel()
+model2 = DenseModel()
+
+model3=EnsembleModel(model1,model2)
+
+print model1.summary()
+print model2.summary()
+print model3.summary()
+
+print stop
 result = np.zeros([8,1])
 printDuring=False
 

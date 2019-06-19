@@ -28,7 +28,8 @@ from keras.utils import np_utils
 
 def EnsembleModel(model1,model2,lr=0.001,time_step=1,input_size=3,output_size=2):
 	input = Input(batch_shape=(None,time_step,input_size))
-	input2=Reshape((time_step*input_size))(input)
+	input2=Lambda(lambda xin :K.reshape(xin,(-1,time_step*input_size)))(input)
+
 	if len(model1.input_shape)==3:
 		output_a = model1(input)
 	else:
@@ -37,7 +38,7 @@ def EnsembleModel(model1,model2,lr=0.001,time_step=1,input_size=3,output_size=2)
         	output_b = model2(input)
 	else:
 		output_b = model2(input2)
-        output = keras.layers.add([out_a, out_b])
+        output = keras.layers.add([output_a, output_b])
 	model = Model(inputs=input, outputs=output)
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
         model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
