@@ -13,36 +13,17 @@ dT = .001
 m.setTimeStep(dT)
 model1 = DenseModel()
 model2 = DenseModel()
-model3 = DenseModel()
 
-model4=EnsembleModel(model1,model2)
+model= EnsembleModel(model1,model2)
 
-model5=EnsembleModel(model3,model4)
+print model.summary()
 
-model6=BoostingModel(model1,model2)
-model7=BoostingModel(model6,model5)
-
-model8=EnsembleModel(model6,model7)
-
-print model1.summary()
-print model2.summary()
-print model3.summary()
-print model4.summary()
-print model5.summary()
-print model6.summary()
-print model7.summary()
-print model8.summary()
-
-print (model6.output_shape)
-print (model7.output_shape)
-print (model8.output_shape)
-print stop
 result = np.zeros([8,1])
 printDuring=False
 
 X=[]
 y=[]
-movingvalue=np.zeros((3,3))
+movingvalue=np.zeros((1,3))
 
 for i in np.arange(0, 50000):
     # control input function
@@ -59,8 +40,8 @@ for i in np.arange(0, 50000):
     stateTensor =(m.state)
     stateTensor = np.concatenate((stateTensor,(np.ones([1,1], dtype=float) * controlInput)), 1)
     outBar=m.step(controlInput)
-    movingvalue[0:2,:]=movingvalue[1:3,:]
-    movingvalue[2,:]=stateTensor
+    #movingvalue[0:2,:]=movingvalue[1:3,:]
+    movingvalue[:,:]=stateTensor
     movingvalue2=np.asarray(list(movingvalue))
 
     if i<10000:
@@ -70,12 +51,12 @@ for i in np.arange(0, 50000):
 
     elif i==10000:
         out=np.zeros((1,2))
-        model.fit(np.asarray(X),(np.asarray(y)).reshape(10000,2),epochs=50)
+        model.fit(np.asarray(X),(np.asarray(y)),epochs=50)
 	adam=keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
         model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
     elif i>10000:
     	out=model.predict(movingvalue2.reshape(1,3,3))
-    	model.fit(movingvalue2.reshape(1,3,3),outBar-stateTensor[:,0:2],epochs=1)
+    	model.fit(movingvalue2.reshape(1,1,3),(outBar-stateTensor[:,0:2]).reshape(1,1,2),epochs=1)
     else:
 	continue
     tmpResult = np.empty([8,1])
@@ -90,6 +71,6 @@ for i in np.arange(0, 50000):
     result = np.concatenate((result,tmpResult),1)
 
 
-evaluate(result,"RNNArima")
+#evaluate(result,"RNNArima")
 
 print model.get_weights()
