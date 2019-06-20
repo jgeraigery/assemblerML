@@ -30,16 +30,37 @@ def EnsembleModel(model1,model2,lr=0.001,time_step=1,input_size=3,output_size=2)
 	input = Input(batch_shape=(None,time_step,input_size))
 	input2=Lambda(lambda xin :K.reshape(xin,(-1,time_step*input_size)))(input)
 
-	if len(model1.input_shape)==3:
-		output_a = model1(input)
+											#Finding Model1 Prediction
+	if type(model1.output_shape) is list:						#Checking if Model1 is Boosted
+		if len(model1.input_shape)==3:						#Checking if Model1 is RNN
+			output_a_1,output_a_2 = model1(input)
+		        output_a = keras.layers.add([output_a_1, output_a_2])		#Adding Boosted model's predictions together
+		else:									#If Model1 is Dense Network
+			output_a_1,output_a_2 = model1(input2)
+		        output_a = keras.layers.add([output_a_1, output_a_2])
+	else:										#If Model1 is not Boosted
+		if len(model1.input_shape)==3:
+			output_a= model1(input)
+		else:
+			output_a = model1(input2)
+
+											#Finding Model2 Prediction
+	if type(model2.output_shape) is list:
+		if len(model2.input_shape)==3:
+			output_b_1,output_b_2 = model2(input)
+		        output_b = keras.layers.add([output_b_1, output_b_2])
+		else:
+			output_b_1,output_b_2 = model2(input2)
+		        output_b = keras.layers.add([output_b_1, output_b_2])
 	else:
-		output_a = model1(input2)
-	if len(model2.input_shape)==3:
-        	output_b = model2(input)
-	else:
-		output_b = model2(input2)
-        output = keras.layers.add([output_a, output_b])
-	model = Model(inputs=input, outputs=output)
+		if len(model2.input_shape)==3:
+			output_b= model2(input)
+		else:
+			output_b = model2(input2)
+
+
+        output = keras.layers.average([output_a, output_b])				#Averaging Output of Model1 and Model2
+	model = Model(inputs=input, outputs=output)					#Combining Models
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
         model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
         return model

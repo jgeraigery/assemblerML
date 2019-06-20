@@ -6,19 +6,36 @@
 from Problems.DCMotor import* 
 from Models.Dense import* 
 from Operators.Ensemble import* 
+from Operators.Boosting import* 
 
 m = Motor()
 dT = .001
 m.setTimeStep(dT)
 model1 = DenseModel()
 model2 = DenseModel()
+model3 = DenseModel()
 
-model3=EnsembleModel(model1,model2)
+model4=EnsembleModel(model1,model2)
+
+model5=EnsembleModel(model3,model4)
+
+model6=BoostingModel(model1,model2)
+model7=BoostingModel(model6,model5)
+
+model8=EnsembleModel(model6,model7)
 
 print model1.summary()
 print model2.summary()
 print model3.summary()
+print model4.summary()
+print model5.summary()
+print model6.summary()
+print model7.summary()
+print model8.summary()
 
+print (model6.output_shape)
+print (model7.output_shape)
+print (model8.output_shape)
 print stop
 result = np.zeros([8,1])
 printDuring=False
@@ -32,7 +49,7 @@ for i in np.arange(0, 50000):
     if ( np.mod(i,50) == 0 ):
         print ("Loop-",i)
 	controlInput=0
-	if (i%1000==0 and i!=0 and i<30000):
+ 	if (i%1000==0 and i!=0 and i<30000):
         	controlInput = 10
 	elif (i%1000==0 and i!=0 and i>30000):
         	controlInput = getControlInput()
