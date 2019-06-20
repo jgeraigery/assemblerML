@@ -25,11 +25,16 @@ from keras.metrics import categorical_accuracy
 from keras.utils import np_utils
 
 
+def SSModel(input_size=3,time_step=1,output_time_step=1,output_size=2,lr=0.001):
+        input = Input(batch_shape=(None,time_step,input_size))
+        inputnew=Lambda(lambda xin :K.reshape(xin,(-1,time_step*input_size)))(input)
 
-def SSmodel(lr=0.001,input_size=3,output_size=2):
-        input = Input(batch_shape=(None,input_size))
-        output = Dense(output_size,activation="linear",use_bias=False)(input)
+
+        output = Dense(output_time_step*output_size,activation="linear",use_bias=False)(inputnew)
+        output=Lambda(lambda xin :K.reshape(xin,(-1,output_time_step,output_size)))(output)
+	
         model = Model(inputs=input, outputs=output)
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
         model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
+
         return model

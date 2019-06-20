@@ -43,9 +43,9 @@ class Motor:
         noise= np.zeros([1,2],dtype=float)
         noise[:,:]=np.random.normal(0.0, 1, 2)
         #print noisedot,noisedot.shape,self.stateDot.shape
-        self.stateDot+=noisedot.transpose()
+        #self.stateDot+=noisedot.transpose()
         self.state += self.stateDot.transpose() * self.dT
-        self.state+=noise*self.dT
+        #self.state+=noise*self.dT
         return self.state
     def update(self):
         self.C = np.array([1.0, 0])

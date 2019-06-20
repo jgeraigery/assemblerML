@@ -7,6 +7,7 @@ from Problems.DCMotor import*
 from Models.Dense import* 
 from Operators.Ensemble import* 
 from Operators.Boosting import* 
+from Evaluation.Evaluate import* 
 
 m = Motor()
 dT = .001
@@ -45,25 +46,25 @@ for i in np.arange(0, 50000):
     movingvalue2=np.asarray(list(movingvalue))
 
     if i<10000:
-        out=np.zeros((1,2))
+        out=np.zeros((1,1,2))
         X.append(movingvalue2)
         y.append(outBar-stateTensor[:,0:2])
 
     elif i==10000:
-        out=np.zeros((1,2))
+        out=np.zeros((1,1,2))
         model.fit(np.asarray(X),(np.asarray(y)),epochs=50)
 	adam=keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
         model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
     elif i>10000:
-    	out=model.predict(movingvalue2.reshape(1,3,3))
+    	out=model.predict(movingvalue2.reshape(1,1,3))
     	model.fit(movingvalue2.reshape(1,1,3),(outBar-stateTensor[:,0:2]).reshape(1,1,2),epochs=1)
     else:
 	continue
     tmpResult = np.empty([8,1])
     tmpResult[0] = dT*(i+1)
-    tmpResult[1] = out[0][0]
+    tmpResult[1] = out[:,:,0]
     tmpResult[2] = outBar[0][0]
-    tmpResult[3] = out[0][1]
+    tmpResult[3] = out[:,:,1]
     tmpResult[4] = outBar[0][1]
     tmpResult[5] = controlInput
     tmpResult[6] = stateTensor[0][0]
@@ -71,6 +72,6 @@ for i in np.arange(0, 50000):
     result = np.concatenate((result,tmpResult),1)
 
 
-#evaluate(result,"RNNArima")
+evaluate(result,"DenseEnsemble")
 
 print model.get_weights()
