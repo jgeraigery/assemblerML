@@ -4,7 +4,7 @@
 
 
 from Problems.DCMotor import* 
-from Models.StateSpace2 import* 
+from Models.StateSpace import* 
 from Operators.Ensemble import* 
 from Operators.Boosting import* 
 from Evaluation.Evaluate import* 
@@ -12,66 +12,93 @@ from Evaluation.Evaluate import*
 m = Motor()
 dT = .001
 m.setTimeStep(dT)
-model = SSModel()
-model2 = SSModel()
 
-#model= EnsembleModel(model1,model2)
+time_step=1
+output_time_step=1
+
+input_size=3
+output_size=2
+
+simulation_time=50000
+training_time=10000
+
+train_on_fly=False
+
+model = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+model2 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+
+#model= EnsembleModel(model1,model2,time_step=time_step)
 
 print model.summary()
 
 result = np.zeros([8,1])
-printDuring=False
 
 X=[]
 y=[]
-movingvalue=np.zeros((1,3))
 
-for i in np.arange(0, 50000):
+moving_input=np.zeros((time_step,input_size))
+moving_output=np.zeros((output_time_step,output_size))
+
+for i in np.arange(0,simulation_time):
     # control input function
-    if ( np.mod(i,50) == 0 ):
-        print ("Loop-",i)
-	controlInput=0
- 	if (i%1000==0 and i!=0 and i<30000):
-        	controlInput = 10
-	elif (i%1000==0 and i!=0 and i>30000):
-        	controlInput = getControlInput()
-    if (i%10000==0):
-	#m.J=m.J+0.1
-	m.update()
-    stateTensor =(m.state)
-    stateTensor = np.concatenate((stateTensor,(np.ones([1,1], dtype=float) * controlInput)), 1)
-    outBar=m.step(controlInput)
-    #movingvalue[0:2,:]=movingvalue[1:3,:]
-    movingvalue[:,:]=stateTensor
-    movingvalue2=np.asarray(list(movingvalue))
+	if (i%100==0):
+		print "Simulation Time:",i*dT
+		controlInput = getControlInput()
 
-    if i<10000:
-        out=np.zeros((1,1,2))
-        X.append(movingvalue2)
-        y.append(outBar-stateTensor[:,0:2])
+	#if (i%10000==0):
+		#m.J=m.J+0.1
+	#	m.update()
 
-    elif i==10000:
-        out=np.zeros((1,1,2))
-        model.fit(np.asarray(X),(np.asarray(y)),epochs=50)
-	adam=keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
-        model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
-    elif i>10000:
-    	out=model.predict(movingvalue2.reshape(1,1,3))
-    	#model.fit(movingvalue2.reshape(1,1,3),(outBar-stateTensor[:,0:2]).reshape(1,1,2),epochs=1)
-    else:
-	continue
-    tmpResult = np.empty([8,1])
-    tmpResult[0] = dT*(i+1)
-    tmpResult[1] = out[:,:,0]
-    tmpResult[2] = outBar[0][0]
-    tmpResult[3] = out[:,:,1]
-    tmpResult[4] = outBar[0][1]
-    tmpResult[5] = controlInput
-    tmpResult[6] = stateTensor[0][0]
-    tmpResult[7] = stateTensor[0][1]
-    result = np.concatenate((result,tmpResult),1)
+	stateTensor =(m.state)
+	stateTensor = np.concatenate((stateTensor,(np.ones([1,1], dtype=float) * controlInput)), 1)
+	outBar=m.step(controlInput)
 
 
-evaluate(result,"SSEnsemble")
+	if time_step>1: #To shift Inputs to the left
+		moving_input[0:time_step-1,:]=moving_input[1:time_step,:]
 
-print model.get_weights()
+	moving_input[time_step-1,:]=stateTensor
+	moving_input2=np.asarray(list(moving_input))
+
+	if output_time_step>1:
+		moving_output[0:output_time_step-1,:]=moving_output[1:output_time_step,:]
+
+	moving_output[output_time_step-1,:]=outBar-stateTensor[:,0:output_size]
+	moving_output2=np.asarray(list(moving_output))
+
+
+	if i<training_time:
+
+		out=np.zeros((1,output_time_step,output_size))
+		X.append(moving_input2)
+		y.append(moving_output2)
+
+	elif i==training_time:
+		out=np.zeros((1,output_time_step,output_size))
+		model.fit(np.asarray(X),np.asarray(y),epochs=50)
+
+		if train_on_fly:
+			adam=keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+			model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
+
+	elif i>training_time:
+		out=model.predict(moving_input2.reshape(1,time_step,input_size))
+		if train_on_fly:
+			model.fit(moving_input2.reshape(1,time_step,input_size),(moving_output2).reshape(1,output_time_step,output_size),epochs=1)
+	else:
+		continue
+
+	tmpResult = np.empty([8,1])
+	tmpResult[0] = dT*(i+1)
+	tmpResult[1] = out[:,:,0]
+	tmpResult[2] = outBar[0][0]
+	tmpResult[3] = out[:,:,1]
+	tmpResult[4] = outBar[0][1]
+	tmpResult[5] = controlInput
+	tmpResult[6] = stateTensor[0][0]
+	tmpResult[7] = stateTensor[0][1]
+	result = np.concatenate((result,tmpResult),1)
+
+
+evaluate(result,"Images/SSEnsemble")
+

@@ -27,14 +27,14 @@ from keras.utils import np_utils
 
 def RNNModel(time_step=1,output_time_step=1,input_size=3,output_size=2,lr=0.001,width=10,depth=1):
         input = Input(batch_shape=(None,time_step,input_size))
-	if depth=1: #Checking for depth to set return_sequences Flag
+	if depth==1: #Checking for depth to set return_sequences Flag
         	x=SimpleRNN(width,activation="relu",return_sequences=False)(input)
 
 	elif depth>1:
         	x=SimpleRNN(width,activation="relu",return_sequences=True)(input)
 		for i in range(depth-2):
-        		x=SimpleRNN(width,activation="relu",return_sequences=True)(input)
-        	x=SimpleRNN(width,activation="relu",return_sequences=False)(input) #Last Layer needs to have return_sequences flag as False
+        		x=SimpleRNN(width,activation="relu",return_sequences=True)(x)
+        	x=SimpleRNN(width,activation="relu",return_sequences=False)(x) #Last Layer needs to have return_sequences flag as False
 
 
         output = Dense(output_time_step*output_size)(x) #Dense Layer of Size Number of Time Steps * Number of Features or States
