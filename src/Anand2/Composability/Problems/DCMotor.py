@@ -16,6 +16,8 @@ np.random.seed(1)
 
 class Motor:
     def __init__(self):
+        self.input_size = 3
+        self.output_size = 2
         self.L = .5
         self.R = 1
         self.J = 0.01
@@ -55,7 +57,7 @@ class Motor:
         self.D = np.array([0.0])
 
 
-def getControlInput():
+    def getControlInput(self):
 	out = np.random.rand() * 20 - 10
 	return out
 
