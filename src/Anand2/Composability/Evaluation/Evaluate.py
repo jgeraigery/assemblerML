@@ -1,47 +1,42 @@
 #Created By Anand
 
 
-from sklearn.utils import class_weight
-import cv2, numpy as np
-from sklearn.model_selection import StratifiedKFold,KFold,train_test_split
 
 import os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import cv2, pandas as pd
 import numpy as np
 import h5py
 import pickle, math
 
-from pandas.tools.plotting import autocorrelation_plot
-from scipy.stats import probplot as qqplot
-
-
-from sklearn.metrics import roc_auc_score, accuracy_score
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import mean_squared_error as mse, r2_score as r2
+#from sklearn.metrics import roc_auc_score, accuracy_score
+#from sklearn.preprocessing import LabelEncoder
+#from sklearn.metrics import mean_squared_error as mse, r2_score as r2
 
 
 
 def NormCrossCorr(a,b,mode='same'):
-        a = (a - np.mean(a)) / (np.std(a) * len(a))
-        b = (b - np.mean(b)) / (np.std(b))
-        c = np.correlate(a, b, mode)
-        return c
+	a = (a - np.mean(a)) / (np.std(a) * len(a))
+	b = (b - np.mean(b)) / (np.std(b))
+	c = np.correlate(a, b, mode)
+	return c
 
-def evaluate(result,output_size=3,Training_Time=10000,name=False):
+def evaluate(result,output_size=6,Training_Time=0,name=False):
 	result2=np.array(result)
-	result[0:Training_Time,output_size*2:output_size*3]=0
+	np.save(name+".npy",result2)
+	#result[0:Training_Time,output_size*2:output_size*3]=0
 	if name!=False:
-		plt.figure(1)
+		plt.figure(1,figsize=(20,10))
 		for i in range(output_size):
 			plt.subplot(output_size+1, 1, i+1)
-			plt.plot(result[:,-1], result[:,i]+result[:,output_size*2+i],c="k",linewidth="4",label="Pred")
-			plt.plot( result[:,-1], result[:,output_size+i],c="r",label="True")
+			plt.plot(result[:,-1],result[:,i]+result[:,output_size*2+i],c="k",linewidth="4",label="Pred")
+			plt.plot(result[:,-1],result[:,output_size+i],c="r",label="True")
 			plt.ylabel("State:"+str(i))
+			plt.legend(loc="upper right")
+
 		plt.subplot(output_size+1, 1, i+2)
-		plt.plot( result[:,-1], result[:,-2],c="r",label="ControlInput")
+		plt.plot(result[:,-1],result[:,-2],c="r",label="ControlInput")
 		plt.ylabel("Control Input")
 		plt.xlabel("Time")
 		plt.legend(loc="upper right")
@@ -49,17 +44,16 @@ def evaluate(result,output_size=3,Training_Time=10000,name=False):
 		plt.savefig(name+".svg")
 		plt.clf()
 
-		plt.figure(1)
-		plt.subplot(3, 1, 1)
+		plt.figure(1,figsize=(20,10))
 		for i in range(output_size):
 			plt.subplot(output_size+1, 1, i+1)
-			plt.plot(result[:,-1], result[:,i],c="k",linewidth="4",label="Pred")
-			plt.plot( result[:,-1], result[:,output_size+i]-result[:,output_size*2+i],c="r",label="True")
+			plt.plot(result[:,-1],result[:,i],c="k",linewidth="4",label="Pred")
+			plt.plot(result[:,-1],result[:,output_size+i]-result2[:,output_size*2+i],c="r",label="True")
 			plt.ylabel("TD State:"+str(i))
 			plt.legend(loc="upper right")
 
 		plt.subplot(output_size+1, 1, i+2)
-		plt.plot( result[:,-1], result[:,-2],c="r",label="ControlInput")
+		plt.plot( result[:,-1],result[:,-2],c="r",label="ControlInput")
 		plt.ylabel("Control Input")
 		plt.xlabel("Time")
 		plt.legend(loc="upper right")
@@ -68,7 +62,27 @@ def evaluate(result,output_size=3,Training_Time=10000,name=False):
 		
 		plt.clf()
 
+
+		plt.figure(1,figsize=(20,10))
+		for i in range(output_size):
+			plt.subplot(output_size+1, 1, i+1)
+			plt.plot(result[:200,-1],result[:200,i],c="k",linewidth="4",label="Pred")
+			plt.plot(result[:200,-1],result[:200,output_size+i]-result2[:200,output_size*2+i],c="r",label="True")
+			plt.ylabel("TD State:"+str(i))
+			plt.legend(loc="upper right")
+
+		plt.subplot(output_size+1, 1, i+2)
+		plt.plot( result[:200,-1],result[:200,-2],c="r",label="ControlInput")
+		plt.ylabel("Control Input")
+		plt.xlabel("Time")
+		plt.legend(loc="upper right")
+		plt.show()
+		plt.savefig(name+"TimeDifferenceExploded.svg")
+		
+		plt.clf()
+
+
 	for i in range(output_size):
-		print "State:",i," Error: ",np.sqrt(np.mean((result2[Training_Time+1:,output_size+i]-result2[Training_Time+1:,output_size*2+i]-result2[Training_Time+1:,i])**2))
-		print "State:",i," R2: ",np.corrcoef(result2[Training_Time+1:,output_size+i]-result2[Training_Time+1:,output_size*2+i],result2[Training_Time+1:,i])
+		print ("State:",i," Error: ",np.sqrt(np.mean((result2[Training_Time+1:,output_size+i]-result2[Training_Time+1:,output_size*2+i]-result2[Training_Time+1:,i])**2)))
+		print ("State:",i," R2: ",np.corrcoef(result2[Training_Time+1:,output_size+i]-result2[Training_Time+1:,output_size*2+i],result2[Training_Time+1:,i]))
 

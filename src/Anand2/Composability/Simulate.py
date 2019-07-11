@@ -3,8 +3,8 @@
 # weights need to be present in a weights folder in the root directory
 
 
-from Problems.DCMotor import* 
-from Problems.InvertedPendulum import* 
+import gym
+
 from Models.Dense import* 
 from Models.StateSpace import* 
 from Models.RNN import* 
@@ -12,11 +12,13 @@ from Operators.Ensemble import*
 from Operators.Boosting import* 
 from Evaluation.Evaluate import* 
 
-m = Inverted_Pendulum()
-dT = .0001
-m.setTimeStep(dT)
 
-time_step=1
+Name="DenseBoosted"
+m = gym.make("CartPole-v0")
+dT = .0001
+m.reset()
+
+time_step=10
 output_time_step=1
 
 input_size=m.input_size
@@ -28,9 +30,9 @@ training_time=10000
 train_on_fly=True
 
 model1 = RNNModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
-model2 = RNNModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+model2 = RNNModel(time_step=output_time_step,output_time_step=output_time_step,input_size=input_size-1,output_size=output_size)
 
-model= EnsembleModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size)
+model= BoostingModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size)
 
 result = np.zeros([1,output_size*3+2])
 
@@ -43,7 +45,7 @@ moving_output=np.zeros((output_time_step,output_size))
 for i in np.arange(0,simulation_time):
     # control input function
 	if (i%100==0):
-		print "Simulation Time:",i*dT
+		print ("Simulation Time:",i*dT)
 		controlInput = m.getControlInput()
 
 	#if (i%10000==0):
@@ -76,15 +78,22 @@ for i in np.arange(0,simulation_time):
 
 	elif i==training_time:
 		out=np.zeros((1,output_time_step,output_size))
-		model.fit(np.asarray(X),np.asarray(y),epochs=50)
+		model1.fit(np.asarray(X),np.asarray(y),epochs=50)
+		model1.trainable=False
+		for epochi in range(50):
+			model.fit(np.asarray(X),[np.asarray(y),np.asarray(y)-model1.predict(np.asarray(X))],epochs=1)
 		if train_on_fly:
 			adam=keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 			model.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
-
+			model1.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
+			model2.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
+			model.summary()
 	elif i>training_time:
-		out=model.predict(moving_input2.reshape(1,time_step,input_size))
+		out1,out2=model.predict(moving_input2.reshape(1,time_step,input_size))
+		out=out1+out2
 		if train_on_fly:
-			model.fit(moving_input2.reshape(1,time_step,input_size),(moving_output2).reshape(1,output_time_step,output_size),epochs=1)
+			model.fit(moving_input2.reshape(1,time_step,input_size),[(moving_output2).reshape(1,output_time_step,output_size),(moving_output2).reshape(1,output_time_step,output_size)-out1],epochs=1)
+			#model1.fit(moving_input2.reshape(1,time_step,input_size),(moving_output2).reshape(1,output_time_step,output_size),epochs=1)
 	else:
 		continue
 
@@ -96,5 +105,5 @@ for i in np.arange(0,simulation_time):
 	result = np.concatenate((result,tmpResult),0)
 
 
-evaluate(result,output_size=output_size,Training_Time=training_time,name="Images/DenseEnsembleIP")
+evaluate(result,output_size=output_size,Training_Time=training_time,name="Images/"+Name)
 
