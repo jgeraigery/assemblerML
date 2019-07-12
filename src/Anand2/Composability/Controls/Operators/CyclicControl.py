@@ -40,7 +40,7 @@ def crop(dimension, start, end):
 		if dimension == 4:
 			return x[:, :, :, :, start: end]
 
-		return Lambda(func)
+	return Lambda(func)
 
 def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,output_size=1): 	#Model1 Controller, Model2 System ID, Model3 Inverse of Controller
 
@@ -62,14 +62,15 @@ def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,o
 		output_b= model2(input5)						#Getting Next TD Position From SystemID using Xt,Ut+1
 			
 	output_b=keras.layers.add([input1,output_b])					#Adding TD to Previous State to get New Position Xt+1
+	#output_b2=crop(2,0,1)(output_b)							#Adding TD to Previous State to get New Position Xt+1
 	input7=keras.layers.concatenate([output_b,output_a])				#Concatenating Xt+1 and Ut+1 to predict Xt
 
-	#output_c = model3(input7)							#Get Xt
+	output_c = model3(input7)							#Get Xt
 
-	#model1 = Model(inputs=[input1,input2,input3], outputs=[output_b,output_c])		#Compiling Models together but without output_a
-	model1 = Model(inputs=[input1,input2,input3], outputs=[output_b])			#Compiling Models together but without output_a
-	#model2 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b,output_c])	#Compiling Models together
-	model2 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b])		#Compiling Models together
+	model1 = Model(inputs=[input1,input2,input3], outputs=[output_b,output_c])		#Compiling Models together but without output_a
+	#model1 = Model(inputs=[input1,input2,input3], outputs=[output_b])			#Compiling Models together but without output_a
+	model2 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b,output_c])	#Compiling Models together
+	#model2 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b])		#Compiling Models together
 
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 	model1.compile(loss="mse", optimizer=adam, metrics=['accuracy'])

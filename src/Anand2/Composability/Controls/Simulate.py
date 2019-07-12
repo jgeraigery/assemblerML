@@ -33,8 +33,7 @@ train_on_fly=True
 def customLoss(input1,input2):
 	def loss(y_true,y_pred):
 		input=K.square(input1-input2)
-		pred=(y_true-y_pred)
-		return K.mean(tf.where(tf.is_nan(input),tf.zeros_like(input),input))+pred		
+		return K.mean(tf.where(tf.is_nan(input),tf.zeros_like(input),input))+K.square(y_true-y_pred)		
 	return loss
 
 input1 = Input(batch_shape=(None,4))
@@ -60,7 +59,7 @@ y=[]
 y2=[]
 
 controlInput=np.zeros((1,1),dtype='int')
-for resets in range(10):
+for resets in range(1000):
 	outBar=m.reset()
 	for i in np.arange(0,training_time):
     	# control input function
@@ -81,7 +80,7 @@ for resets in range(10):
 			y2.append(controlInput[0][0])
 			labelnew=np.zeros((len(y),1))
 			labelnew[0:int(len(y)/2)]=1
-			model.fit([np.asarray(X),np.asarray(y),np.asarray(y2)],labelnew,epochs=100,verbose=1,batch_size=32)
+			model.fit([np.asarray(X),np.asarray(y),np.asarray(y2)],labelnew,epochs=100,verbose=0,batch_size=len(X))
 			rewards[resets]=(i+1)
 			print ("Number of Iterations Lasted:",i)
 			time.sleep(1)

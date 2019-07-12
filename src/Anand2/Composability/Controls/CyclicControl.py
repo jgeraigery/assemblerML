@@ -72,18 +72,29 @@ print (model.summary())
 m.reset()
 stateTensor=m.state
 stateTensor=stateTensor.reshape(1,1,2)
-ref=X[10,:,0:2]
+ref=np.array([1,0.2])
 ref=ref.reshape(1,1,2)
 controlInput=np.zeros((1,1,1))
-nanInput=np.zeros((1,1,1))
-nanInput[:,:,:]=np.nan
-
-for i in np.arange(0,2500):
-	print (ref,stateTensor,controlInput)
+stateNew=np.array(stateTensor)
+X=[]
+y=[]
+for i in np.arange(0,25000):
+	print (ref,stateTensor,stateNew,controlInput,i)
 	time.sleep(0.1)
 
-	model.fit([stateTensor,ref-stateTensor,controlInput],[ref],epochs=100,verbose=0)
-	controlInput,stateTensor=modeltrue.predict([stateTensor,ref-stateTensor,controlInput])
-
+	controlInput,stateTensor,_=modeltrue.predict([stateTensor,ref-stateTensor,controlInput])
+	X.append([stateTensor,ref-stateTensor,controlInput])
+	y.append([ref[:,:,:],stateTensor])
+	model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=1)
+	stateNew=np.array(stateTensor)	
 	stateTensor=m.step(controlInput[0][0][0])
 	stateTensor=stateTensor.reshape(1,1,2)
+
+	if i%50==0:
+		for j in range(len(X)):
+			model.fit(X[j],y[j],epochs=10,verbose=1)
+
+	if i==500:
+		ref[:,:,0]=-100	
+	elif i==1000:
+		ref[:,:,0]=100	
