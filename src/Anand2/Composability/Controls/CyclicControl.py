@@ -76,16 +76,18 @@ ref=np.array([1,0.2])
 ref=ref.reshape(1,1,2)
 controlInput=np.zeros((1,1,1))
 stateNew=np.array(stateTensor)
+
 X=[]
 y=[]
-for i in np.arange(0,25000):
+for i in np.arange(0,1):
 	print (ref,stateTensor,stateNew,controlInput,i)
 	time.sleep(0.1)
 
 	controlInput,stateTensor,_=modeltrue.predict([stateTensor,ref-stateTensor,controlInput])
 	X.append([stateTensor,ref-stateTensor,controlInput])
 	y.append([ref[:,:,:],stateTensor])
-	model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=1)
+	tensorboard=TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=True, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None)
+	model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=1,callbacks=[tensorboard])
 	stateNew=np.array(stateTensor)	
 	stateTensor=m.step(controlInput[0][0][0])
 	stateTensor=stateTensor.reshape(1,1,2)
@@ -95,6 +97,6 @@ for i in np.arange(0,25000):
 			model.fit(X[j],y[j],epochs=10,verbose=1)
 
 	if i==500:
-		ref[:,:,0]=-100	
+		ref[:,:,1]=-10	
 	elif i==1000:
-		ref[:,:,0]=100	
+		ref[:,:,1]=10	

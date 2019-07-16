@@ -17,7 +17,7 @@ from keras.models import Model, Sequential
 from keras.utils.vis_utils import plot_model
 from keras.optimizers import SGD, Adam
 from keras.regularizers import l2
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau,EarlyStopping,TensorBoard
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau,EarlyStopping
 import keras.backend as K
 from keras.preprocessing.image import ImageDataGenerator
 from keras import regularizers
@@ -42,37 +42,24 @@ def crop(dimension, start, end):
 
 	return Lambda(func)
 
-def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,output_size=1): 	#Model1 Controller, Model2 System ID, Model3 Inverse of Controller
+def customLoss(input1,input2):
+	def loss(y_true,y_pred):
+		return (K.square(input2-y_pred)+10*K.square(y_true-y_pred))
+	return loss
 
-	model2.trainable=False
+def customLoss2(y_true,y_pred):
+	return (K.square(y_true-y_pred)+K.square(y_true-y_pred))
 
+
+def SingleControlModel(model1,lr=0.0001,time_step=1,input_size=2,output_size=1): 	#Model1 Controller, Model2 System ID, Model3 Inverse of Controller
 	input1 = Input(batch_shape=(None,time_step,input_size))				#Xt Current Position
-	input2 = Input(batch_shape=(None,time_step,input_size))				#et error with Ref
+	input2 = Input(batch_shape=(None,time_step,input_size))				#Reference Position
 	input3 = Input(batch_shape=(None,time_step,1))					#Ut Previous Action
 	input4=keras.layers.concatenate([input1,input2,input3])				#Concatenating Xt,et,Ut to predict Ut+1
-	output_a= model1(input4)							#Predicting Ut+1
+	output_a1,output_a2= model1(input4)							#Predicting Ut+1
 
-	input5=keras.layers.concatenate([input1,output_a])				#Concatenating Xt with Ut+1
-
-	if type(model2.output_shape) is list: 						#Finding if SystemID is Boosted Model
-		output_b_1,output_b_2 = model2(input5)
-		output_b=keras.layers.add([output_b_1,output_b_2]) 			#Adding Outputs together to get Boosted Model's Final Prediction 
-	else: 										#If Model2 is not Boosted
-
-		output_b= model2(input5)						#Getting Next TD Position From SystemID using Xt,Ut+1
-			
-	output_b=keras.layers.add([input1,output_b])					#Adding TD to Previous State to get New Position Xt+1
-	#output_b2=crop(2,0,1)(output_b)							#Adding TD to Previous State to get New Position Xt+1
-	input7=keras.layers.concatenate([output_b,output_a])				#Concatenating Xt+1 and Ut+1 to predict Xt
-
-	output_c = model3(input7)							#Get Xt
-
-	model4 = Model(inputs=[input1,input2,input3], outputs=[output_b,output_c])		#Compiling Models together but without output_a
-	#model4 = Model(inputs=[input1,input2,input3], outputs=[output_b])			#Compiling Models together but without output_a
-	model5 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b,output_c])	#Compiling Models together
-	#model5 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b])		#Compiling Models together
+	model2 = Model(inputs=[input1,input2,input3], outputs=[output_a1,output_a2])		#Compiling Models together but without output_a
 
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
-	model4.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
-	model5.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
-	return model4,model5
+	model2.compile(loss=[customLoss(input1,input2),customLoss2], optimizer=adam, metrics=['accuracy'])
+	return model2
