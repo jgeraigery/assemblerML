@@ -11,9 +11,9 @@ from Operators.Ensemble import*
 from Operators.Boosting import* 
 from Evaluation.Evaluate import* 
 import pandas as pd
-Name="EnsembleSS"
+Name="1Input1OutputEnsembleSS"
 
-DataFrame=pd.read_excel("RealData/10Hz.xlsx")
+DataFrame=pd.read_excel("RealData/10Hz-2.xlsx")
 
 timeforce=np.asarray(DataFrame["Time"])
 force=np.asarray(DataFrame["Force"])
@@ -45,8 +45,8 @@ input_size=m.input_size
 output_size=m.output_size
 
 
-model1 = RNNModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
-model2 = RNNModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+model1 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+model2 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
 
 model= EnsembleModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size)
 

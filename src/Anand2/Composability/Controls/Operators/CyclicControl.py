@@ -44,7 +44,7 @@ def crop(dimension, start, end):
 
 def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,output_size=1): 	#Model1 Controller, Model2 System ID, Model3 Inverse of Controller
 
-	model2.trainable=False
+	#model2.trainable=False
 
 	input1 = Input(batch_shape=(None,time_step,input_size))				#Xt Current Position
 	input2 = Input(batch_shape=(None,time_step,input_size))				#et error with Ref
@@ -61,7 +61,7 @@ def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,o
 
 		output_b= model2(input5)						#Getting Next TD Position From SystemID using Xt,Ut+1
 			
-	output_b=keras.layers.add([input1,output_b])					#Adding TD to Previous State to get New Position Xt+1
+	#output_b=keras.layers.add([input1,output_b])					#Adding TD to Previous State to get New Position Xt+1
 	#output_b2=crop(2,0,1)(output_b)							#Adding TD to Previous State to get New Position Xt+1
 	input7=keras.layers.concatenate([output_b,output_a])				#Concatenating Xt+1 and Ut+1 to predict Xt
 

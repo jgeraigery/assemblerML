@@ -29,10 +29,10 @@ from keras.utils import np_utils
 def ControlDenseModel(input_size=3,time_step=1,output_time_step=1,output_size=1,lr=0.001,width=10,depth=1):
 	input = Input(batch_shape=(None,time_step,input_size))
 	inputnew=Lambda(lambda xin :K.reshape(xin,(-1,time_step*input_size)))(input)
-	x = Dense(width,activation="relu",use_bias=False)(inputnew)
+	x = Dense(width,activation="linear",use_bias=False)(inputnew)
 
 	for i in range(depth-1):
-		x = Dense(width,activation="relu",use_bias=False)(x)
+		x = Dense(width,activation="linear",use_bias=False)(x)
 
 	output = Dense(output_size,activation="linear",use_bias=False)(x)
 	output=Lambda(lambda xin :K.reshape(xin,(-1,output_time_step,output_size)))(output)

@@ -28,7 +28,7 @@ output_size=2
 
 model1 = ControlDenseModel(time_step=time_step,output_time_step=output_time_step,input_size=5,output_size=1)
 model2 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=3,output_size=2)
-model3 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,output_size=2)
+model3 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=3,output_size=2)
 
 X=[]
 y=[]
@@ -54,7 +54,8 @@ for i in np.arange(0,25000):
 	if output_time_step>1:
 		moving_output[0:output_time_step-1,:]=moving_output[1:output_time_step,:]
 
-	moving_output[output_time_step-1,:]=outBar-stateTensor[:,0:output_size]
+	#moving_output[output_time_step-1,:]=outBar-stateTensor[:,0:output_size]
+	moving_output[output_time_step-1,:]=outBar
 	moving_output2=np.asarray(list(moving_output))
 
 	X.append(moving_input2)
@@ -76,25 +77,25 @@ ref=np.array([1,0.2])
 ref=ref.reshape(1,1,2)
 controlInput=np.zeros((1,1,1))
 stateNew=np.array(stateTensor)
+PrevPosition=np.array(stateTensor)
 
 X=[]
 y=[]
-for i in np.arange(0,1):
-	print (ref,stateTensor,stateNew,controlInput,i)
+for i in np.arange(0,2500):
+	print ("Reference State,True State, Previous State, Predicted State,Control Action,Loop Count",ref,stateTensor,PrevPosition,stateNew,controlInput,i)
 	time.sleep(0.1)
 
-	controlInput,stateTensor,_=modeltrue.predict([stateTensor,ref-stateTensor,controlInput])
-	X.append([stateTensor,ref-stateTensor,controlInput])
-	y.append([ref[:,:,:],stateTensor])
-	tensorboard=TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=True, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None)
-	model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=1,callbacks=[tensorboard])
+	#controlInput,stateTensor,PrevPosition=modeltrue.predict([stateTensor,ref-stateTensor,controlInput])
+	controlInput,stateTensor,PrevPosition=modeltrue.predict([stateTensor,ref,controlInput])
+	#X.append([stateTensor,ref-stateTensor,controlInput])
+	#y.append([ref[:,:,:],stateTensor])
+	#tensorboard=TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=True, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None)
+	#model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=1,callbacks=[tensorboard])
+	#model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=0)
+	model.fit([stateTensor,ref,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=0)
 	stateNew=np.array(stateTensor)	
 	stateTensor=m.step(controlInput[0][0][0])
 	stateTensor=stateTensor.reshape(1,1,2)
-
-	if i%50==0:
-		for j in range(len(X)):
-			model.fit(X[j],y[j],epochs=10,verbose=1)
 
 	if i==500:
 		ref[:,:,1]=-10	
