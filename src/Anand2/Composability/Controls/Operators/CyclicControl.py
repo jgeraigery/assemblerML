@@ -42,14 +42,22 @@ def crop(dimension, start, end):
 
 	return Lambda(func)
 
+def custom_loss(y_true, y_pred):
+	y_true1=crop(2,0,1)(y_true)
+	y_pred1=crop(2,0,1)(y_pred)
+	y_true2=crop(2,1,2)(y_true)
+	y_pred2=crop(2,1,2)(y_pred)
+	return (1000*(y_true1-y_pred1)**2+1*(y_true2-y_pred2)**2)
+
 def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,output_size=1): 	#Model1 Controller, Model2 System ID, Model3 Inverse of Controller
 
-	#model2.trainable=False
+	model2.trainable=False
 
 	input1 = Input(batch_shape=(None,time_step,input_size))				#Xt Current Position
 	input2 = Input(batch_shape=(None,time_step,input_size))				#et error with Ref
 	input3 = Input(batch_shape=(None,time_step,1))					#Ut Previous Action
 	input4=keras.layers.concatenate([input1,input2,input3])				#Concatenating Xt,et,Ut to predict Ut+1
+	#input4=keras.layers.concatenate([input1,input2])				#Concatenating Xt,et,Ut to predict Ut+1
 	output_a= model1(input4)							#Predicting Ut+1
 
 	input5=keras.layers.concatenate([input1,output_a])				#Concatenating Xt with Ut+1
@@ -65,14 +73,14 @@ def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,o
 	#output_b2=crop(2,0,1)(output_b)							#Adding TD to Previous State to get New Position Xt+1
 	input7=keras.layers.concatenate([output_b,output_a])				#Concatenating Xt+1 and Ut+1 to predict Xt
 
-	output_c = model3(input7)							#Get Xt
+	#output_c = model3(input7)							#Get Xt
 
-	model4 = Model(inputs=[input1,input2,input3], outputs=[output_b,output_c])		#Compiling Models together but without output_a
-	#model4 = Model(inputs=[input1,input2,input3], outputs=[output_b])			#Compiling Models together but without output_a
-	model5 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b,output_c])	#Compiling Models together
-	#model5 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b])		#Compiling Models together
+	#model4 = Model(inputs=[input1,input2,input3], outputs=[output_b,output_c])		#Compiling Models together but without output_a
+	model4 = Model(inputs=[input1,input2,input3], outputs=[output_b])			#Compiling Models together but without output_a
+	#model5 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b,output_c])	#Compiling Models together
+	model5 = Model(inputs=[input1,input2,input3], outputs=[output_a,output_b])		#Compiling Models together
 
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
-	model4.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
-	model5.compile(loss="mse", optimizer=adam, metrics=['accuracy'])
+	model4.compile(loss=custom_loss, optimizer=adam, metrics=['accuracy'])
+	model5.compile(loss=custom_loss, optimizer=adam, metrics=['accuracy'])
 	return model4,model5

@@ -29,7 +29,7 @@ class Motor:
 		-(self.L*self.b+self.R*self.J)/(self.L*self.J)]])
 		self.B=np.array([[0],[self.Km/(self.L*self.J)]])
 		self.D=np.array([0.0])
-		self.dT=0.001
+		self.dT=0.0
 
 		self.state=np.zeros([1,2],dtype=float)
 		self.stateDot=np.zeros([1,2],dtype=float)
@@ -60,10 +60,6 @@ class Motor:
 		out=(np.random.rand()*20)-10
 		return out
 
-	def getReward(self,ref):
-		out=-np.abs((self.state[:,0]-ref[:,0]))
-		return np.array(out)
-
 	def reset(self):
 		self.C=np.array([1.0,0])
 		self.A=np.array([[0,1.0],[-(self.R*self.b-self.Km*self.Kb)/(self.L*self.J),
@@ -71,9 +67,6 @@ class Motor:
 		self.B=np.array([[0],[self.Km/(self.L*self.J)]])
 		self.D=np.array([0.0])
 
-		#self.dT=0.0
 
 		self.state=np.zeros([1,2],dtype=float)
 		self.stateDot=np.zeros([1,2],dtype=float)
-
-

@@ -2,7 +2,7 @@
 # train and test directories of the dataset need to be present in the root directory
 # weights need to be present in a weights folder in the root directory
 
-from Problems.DCMotor import *
+from Problems.DCMotor2 import *
 from numpy import sin,cos,pi
 from Models.ControlDense import* 
 from Models.Dense import* 
@@ -11,7 +11,7 @@ from Models.RNN import*
 from Operators.Ensemble import* 
 from Operators.Boosting import* 
 from Operators.CyclicControl import* 
-from Evaluation.Evaluate import* 
+from Evaluation.EvaluateControl import* 
 import pandas as pd
 Name="ControllerTrial"
 import time
@@ -26,9 +26,10 @@ output_time_step=1
 input_size=3
 output_size=2
 
-model1 = ControlDenseModel(time_step=time_step,output_time_step=output_time_step,input_size=5,output_size=1)
-model2 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=3,output_size=2)
-model3 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=3,output_size=2)
+#model1 = ControlDenseModel(time_step=time_step,output_time_step=output_time_step,input_size=4,output_size=1)
+model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=5,depth=3,output_size=1)
+model2 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,depth=3,output_size=2)
+model3 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,depth=3,output_size=2)
 
 X=[]
 y=[]
@@ -67,37 +68,62 @@ model2.fit(X,y,epochs=20,batch_size=32)
 
 model2.trainable=False
 
+print (model2.summary())
+print (model2.get_weights())
+
+
 model,modeltrue=CyclicControlModel(model1,model2,model3,input_size=2)
 print (model.summary())
 
 m.reset()
 stateTensor=m.state
 stateTensor=stateTensor.reshape(1,1,2)
-ref=np.array([1,0.2])
+ref=np.array([0,10.0])
 ref=ref.reshape(1,1,2)
 controlInput=np.zeros((1,1,1))
 stateNew=np.array(stateTensor)
 PrevPosition=np.array(stateTensor)
 
-X=[]
-y=[]
-for i in np.arange(0,2500):
-	print ("Reference State,True State, Previous State, Predicted State,Control Action,Loop Count",ref,stateTensor,PrevPosition,stateNew,controlInput,i)
+X1=[]
+X2=[]
+X3=[]
+for i in np.arange(0,800):
+	#print ("Reference State,True State, Previous State, Predicted State,Control Action,Loop Count",ref,stateTensor,PrevPosition,stateNew,controlInput,i)
+	print ("Reference State,True State,Predicted State,Control Action,Loop Count",ref,stateTensor,stateNew,controlInput,i)
 	time.sleep(0.1)
+	if i<=200:
+		ref[:,:,0]+=10.0*dT
+	elif i>200 and i<400:
+		ref[:,:,0]=-30
+		ref[:,:,1]=-10
+	elif i>400 and i<500:
+		ref[:,:,0]=2
+		ref[:,:,1]=2
+	elif i>500 and i<600:
+		ref[:,:,0]=-10
+		ref[:,:,1]=0
+	else:
+		ref[:,:,0]=100
+		ref[:,:,1]=0
+		
 
 	#controlInput,stateTensor,PrevPosition=modeltrue.predict([stateTensor,ref-stateTensor,controlInput])
-	controlInput,stateTensor,PrevPosition=modeltrue.predict([stateTensor,ref,controlInput])
-	#X.append([stateTensor,ref-stateTensor,controlInput])
-	#y.append([ref[:,:,:],stateTensor])
-	#tensorboard=TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=True, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None)
-	#model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=1,callbacks=[tensorboard])
-	#model.fit([stateTensor,ref-stateTensor,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=0)
-	model.fit([stateTensor,ref,controlInput],[ref[:,:,:],stateTensor],epochs=100,verbose=0)
+	#controlInput,stateTensor,PrevPosition=modeltrue.predict([stateTensor,ref,controlInput])
+	controlInput,stateTensor=modeltrue.predict([stateTensor,ref,controlInput])
+	X1.append(stateTensor)
+	X2.append(np.array(ref))
+	X3.append(controlInput)
+	model.fit([stateTensor,ref,controlInput],[ref[:,:,:]],epochs=200,verbose=0)
 	stateNew=np.array(stateTensor)	
 	stateTensor=m.step(controlInput[0][0][0])
 	stateTensor=stateTensor.reshape(1,1,2)
 
-	if i==500:
-		ref[:,:,1]=-10	
-	elif i==1000:
-		ref[:,:,1]=10	
+		
+
+X1=np.reshape(np.asarray(X1),(len(X1),2))
+X2=np.reshape(np.asarray(X2),(len(X2),2))
+X3=np.reshape(np.asarray(X3),(len(X3),1))
+
+X=np.concatenate([X1,X2,X3],axis=-1)
+
+evaluate(X,name="Images/CyclicControl-M1Dense-M2Dense-M3Dense")
