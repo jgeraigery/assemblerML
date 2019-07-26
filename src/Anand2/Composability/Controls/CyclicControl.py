@@ -10,10 +10,11 @@ from Models.StateSpace import*
 from Models.RNN import* 
 from Operators.Ensemble import* 
 from Operators.Boosting import* 
-from Operators.CyclicControl import* 
+from Operators.CyclicControl2 import* 
 from Evaluation.EvaluateControl import* 
 import pandas as pd
-Name="ControllerTrial"
+
+Name="IPController"
 import time
 
 m = Motor()
@@ -27,8 +28,9 @@ input_size=3
 output_size=2
 
 #model1 = ControlDenseModel(time_step=time_step,output_time_step=output_time_step,input_size=4,output_size=1)
-model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=5,depth=3,output_size=1)
+model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=5,depth=3,output_size=1,output_function="linear")
 model2 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,depth=3,output_size=2)
+#model2 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,output_size=2)
 model3 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,depth=3,output_size=2)
 
 X=[]
@@ -64,7 +66,7 @@ for i in np.arange(0,25000):
 
 X=np.asarray(X)
 y=np.asarray(y)
-model2.fit(X,y,epochs=20,batch_size=32)
+model2.fit(X,y,epochs=40,batch_size=32)
 
 model2.trainable=False
 

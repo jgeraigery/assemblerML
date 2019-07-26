@@ -25,7 +25,7 @@ from keras.metrics import categorical_accuracy
 from keras.utils import np_utils
 
 
-def SSModel(input_size=3,time_step=1,output_time_step=1,output_size=2,lr=0.001):
+def SSModel(input_size=3,time_step=1,output_time_step=1,output_size=2,lr=0.0001):
 	input = Input(batch_shape=(None,time_step,input_size))
 	inputnew=Lambda(lambda xin :K.reshape(xin,(-1,time_step*input_size)))(input)
 

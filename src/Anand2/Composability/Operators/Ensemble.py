@@ -26,7 +26,7 @@ from keras.utils import np_utils
 
 
 
-def EnsembleModel(model1,model2,lr=0.001,time_step=1,input_size=3,output_size=2):
+def EnsembleModel(model1,model2,lr=0.0001,time_step=1,input_size=3,output_size=2):
 	input = Input(batch_shape=(None,time_step,input_size))
 										#Finding Model1 Prediction
 	if type(model1.output_shape) is list:						#Checking if Model1 is Boosted

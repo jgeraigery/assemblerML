@@ -24,6 +24,8 @@ from keras import regularizers
 from keras.metrics import categorical_accuracy
 from keras.utils import np_utils
 
+import numpy as np
+
 def crop(dimension, start, end):
 	# Crops (or slices) a Tensor on a given dimension from start to end
 	# example : to crop tensor x[:, :, 5:10]
@@ -47,9 +49,23 @@ def custom_loss(y_true, y_pred):
 	y_pred1=crop(2,0,1)(y_pred)
 	y_true2=crop(2,1,2)(y_true)
 	y_pred2=crop(2,1,2)(y_pred)
-	return (1000*(y_true1-y_pred1)**2+1*(y_true2-y_pred2)**2)
+	y_true3=crop(2,2,3)(y_true)
+	y_pred3=crop(2,2,3)(y_pred)
+	#return (1000*(y_true1-y_pred1)**2+1000*(y_true2-y_pred2)**2+1000*(y_true3-y_pred3)**2)
+	return (1000*(y_true1-y_pred1)**2+1*(y_true3-y_pred3)**2)/1000
 
-def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,output_size=1): 	#Model1 Controller, Model2 System ID, Model3 Inverse of Controller
+def new_loss(input):
+	def custom_loss(y_true, y_pred):
+		y_true1=crop(2,0,1)(y_true)
+		y_pred1=crop(2,0,1)(y_pred)
+		y_true2=crop(2,1,2)(y_true)
+		y_pred2=crop(2,1,2)(y_pred)
+		y_true3=crop(2,2,3)(y_true)
+		y_pred3=crop(2,2,3)(y_pred)
+		return (1000*(y_true1-y_pred1)**2+1*(y_true3-y_pred3)**2+0.1*input**2)/1000
+		#return (1000*(y_true1-y_pred1)**2+1000*(y_true2-y_pred2)**2+1000*(y_true3-y_pred3)**2+0*input**2)
+	return custom_loss
+def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=3,output_size=1): 	#Model1 Controller, Model2 System ID, Model3 Inverse of Controller
 
 	model2.trainable=False
 
@@ -59,8 +75,8 @@ def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=2,o
 	input4=keras.layers.concatenate([input1,input2,input3])				#Concatenating Xt,et,Ut to predict Ut+1
 	#input4=keras.layers.concatenate([input1,input2])				#Concatenating Xt,et,Ut to predict Ut+1
 	output_a= model1(input4)							#Predicting Ut+1
-
-	input5=keras.layers.concatenate([input1,output_a])				#Concatenating Xt with Ut+1
+	output_a=Lambda(lambda x: (x * 4.0)-2.0)(output_a)
+	input5=keras.layers.concatenate([input1,output_a],axis=-1)				#Concatenating Xt with Ut+1
 
 	if type(model2.output_shape) is list: 						#Finding if SystemID is Boosted Model
 		output_b_1,output_b_2 = model2(input5)

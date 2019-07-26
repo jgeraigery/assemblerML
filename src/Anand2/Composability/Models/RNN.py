@@ -25,7 +25,7 @@ from keras.metrics import categorical_accuracy
 from keras.utils import np_utils
 
 
-def RNNModel(time_step=1,output_time_step=1,input_size=3,output_size=2,lr=0.001,width=10,depth=1):
+def RNNModel(time_step=1,output_time_step=1,input_size=3,output_size=2,lr=0.0001,width=10,depth=1):
 	input = Input(batch_shape=(None,time_step,input_size))
 	if depth==1: #Checking for depth to set return_sequences Flag
 		x=SimpleRNN(width,activation="relu",return_sequences=False)(input)

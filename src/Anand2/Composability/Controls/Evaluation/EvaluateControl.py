@@ -8,7 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
-import pickle, math
+import pickle, math,pandas as pd
 
 #from sklearn.metrics import roc_auc_score, accuracy_score
 #from sklearn.preprocessing import LabelEncoder
@@ -23,6 +23,8 @@ def NormCrossCorr(a,b,mode='same'):
 	return c
 
 def evaluate(result,output_size=2,Training_Time=0000,name=False):
+	df=pd.DataFrame(result)
+	df.to_csv(name+".csv")
 	if name!=False:
 		plt.figure(1,figsize=(20,10))
 		for i in range(output_size):

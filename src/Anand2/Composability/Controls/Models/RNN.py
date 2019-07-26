@@ -11,7 +11,7 @@ from keras.optimizers import SGD
 import keras
 from keras.layers.advanced_activations import LeakyReLU, PReLU,ELU
 from keras.preprocessing.image import ImageDataGenerator
-from keras.layers import Convolution2D, Dense, Input, MaxPooling2D, Dropout, Flatten, ZeroPadding2D, Activation,LSTM,Bidirectional,Convolution1D,MaxPooling1D,Conv1D,SimpleRNN,Lambda
+from keras.layers import Convolution2D, Dense, Input, MaxPooling2D, Dropout, Flatten, ZeroPadding2D, Activation,SimpleRNN,Bidirectional,Convolution1D,MaxPooling1D,Conv1D,SimpleRNN,Lambda,LSTM
 from keras.layers.pooling import AveragePooling2D,GlobalAveragePooling1D
 from keras.models import Model, Sequential
 from keras.utils.vis_utils import plot_model
@@ -25,7 +25,7 @@ from keras.metrics import categorical_accuracy
 from keras.utils import np_utils
 
 
-def RNNModel(time_step=1,output_time_step=1,input_size=3,output_size=2,lr=0.001,width=10,depth=1):
+def RNNModel(time_step=1,output_time_step=1,input_size=3,output_size=2,lr=0.001,width=10,depth=1,output_function="linear"):
 	input = Input(batch_shape=(None,time_step,input_size))
 	if depth==1: #Checking for depth to set return_sequences Flag
 		x=SimpleRNN(width,activation="relu",return_sequences=False)(input)
@@ -38,7 +38,7 @@ def RNNModel(time_step=1,output_time_step=1,input_size=3,output_size=2,lr=0.001,
 		x=SimpleRNN(width,activation="relu",return_sequences=False)(x) #Last Layer needs to have return_sequences flag as False
 
 
-	output = Dense(output_time_step*output_size)(x) #Dense Layer of Size Number of Time Steps * Number of Features or States
+	output = Dense(output_time_step*output_size,activation=output_function)(x) #Dense Layer of Size Number of Time Steps * Number of Features or States
 	output=Lambda(lambda xin :K.reshape(xin,(-1,output_time_step,output_size)))(output) #Reshaping
 
 	model = Model(inputs=input, outputs=output) #Creating Model

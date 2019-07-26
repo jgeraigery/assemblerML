@@ -11,12 +11,12 @@ from Operators.Ensemble import*
 from Operators.Boosting import* 
 from Evaluation.Evaluate import* 
 
-Name="RNN"
+Name="Dense"
 m = gym.make("Acrobot-v1")
 m.reset()
 dT = .001
 
-time_step=10
+time_step=1
 output_time_step=1
 
 input_size=7
@@ -28,7 +28,7 @@ control_frequency=100
 
 train_on_fly=True
 
-model = RNNModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+model = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size,depth=3)
 
 X=[]
 y=[]
@@ -108,7 +108,7 @@ out=model.predict(X1)
 result=np.concatenate((out,y1+X1[:,[-1],0:output_size],X1[:,[-1],:]),axis=2)
 
 result=result.reshape(10000,output_size*3+1)
-evaluate(result,output_size=output_size,Training_Time=0,name="Images/Interpolation"+Name)
+evaluate(result,output_size=output_size,Training_Time=0,name="Images/Acrobot/Interpolation"+Name)
 
 m.reset()
 
@@ -154,4 +154,4 @@ out=model.predict(X1)
 result=np.concatenate((out,y1+X1[:,[-1],0:output_size],X1[:,[-1],:]),axis=2)
 
 result=result.reshape(10000,output_size*3+1)
-evaluate(result,output_size=output_size,Training_Time=0,name="Images/Extrapolation"+Name)
+evaluate(result,output_size=output_size,Training_Time=0,name="Images/Acrobot/Extrapolation"+Name)
