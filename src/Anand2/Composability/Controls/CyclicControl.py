@@ -10,7 +10,7 @@ from Models.StateSpace import*
 from Models.RNN import* 
 from Operators.Ensemble import* 
 from Operators.Boosting import* 
-from Operators.CyclicControl2 import* 
+from Operators.CyclicControl import* 
 from Evaluation.EvaluateControl import* 
 import pandas as pd
 
@@ -28,8 +28,8 @@ input_size=3
 output_size=2
 
 #model1 = ControlDenseModel(time_step=time_step,output_time_step=output_time_step,input_size=4,output_size=1)
-model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=5,depth=3,output_size=1,output_function="linear")
-model2 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,depth=3,output_size=2)
+model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=5,depth=3,output_size=1,output_function="sigmoid")
+model2 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,depth=3,output_size=2,output_function="linear")
 #model2 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,output_size=2)
 model3 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=3,depth=3,output_size=2)
 
@@ -94,19 +94,20 @@ for i in np.arange(0,800):
 	print ("Reference State,True State,Predicted State,Control Action,Loop Count",ref,stateTensor,stateNew,controlInput,i)
 	time.sleep(0.1)
 	if i<=200:
-		ref[:,:,0]+=10.0*dT
-	elif i>200 and i<400:
+		ref[:,:,0]=100
+		ref[:,:,1]=0
+	elif i>200 and i<=400:
 		ref[:,:,0]=-30
 		ref[:,:,1]=-10
-	elif i>400 and i<500:
+	elif i>400 and i<=500:
 		ref[:,:,0]=2
 		ref[:,:,1]=2
 	elif i>500 and i<600:
 		ref[:,:,0]=-10
 		ref[:,:,1]=0
 	else:
-		ref[:,:,0]=100
-		ref[:,:,1]=0
+		ref[:,:,0]+=10.0*dT
+		ref[:,:,1]=10
 		
 
 	#controlInput,stateTensor,PrevPosition=modeltrue.predict([stateTensor,ref-stateTensor,controlInput])

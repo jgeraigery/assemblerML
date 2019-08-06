@@ -12,11 +12,11 @@ from Operators.Boosting import*
 from Evaluation.Evaluate import* 
 import pandas as pd
 
-Name="1Input1OutputSSBoostingSS"
+Name="1Input1OutputSSBoostingDense"
 
-'''
-#DataFrame=pd.read_excel("RealData/10Hz-2.xlsx")
-DataFrame=pd.read_excel("RealData/1Hz.xlsx")
+
+DataFrame=pd.read_excel("RealData/10Hz-2.xlsx")
+#DataFrame=pd.read_excel("RealData/1Hz.xlsx")
 
 timeforce=np.asarray(DataFrame["Time"])
 force=np.asarray(DataFrame["Force"])
@@ -44,8 +44,8 @@ print (forceavg,forceavg.shape)
 
 m = Motor()
 
-time_step=1
-output_time_step=1
+time_step=10
+output_time_step=10
 
 input_size=m.input_size
 output_size=m.output_size
@@ -86,10 +86,10 @@ y=np.asarray(y)
 
 
 
-np.save("X1Hz.npy",X)
-np.save("y1Hz.npy",y)
+np.save("input10X10Hz.npy",X)
+np.save("output10y1Hz.npy",y)
 print (stop)
-'''
+
 
 m = Motor()
 
@@ -100,8 +100,8 @@ input_size=m.input_size
 output_size=m.output_size
 
 
-model1 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
-model2 = SSModel(time_step=output_time_step,output_time_step=output_time_step,input_size=input_size-1,output_size=output_size)
+model1 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size,lr=0.001)
+model2 = DenseModel(time_step=output_time_step,output_time_step=output_time_step,input_size=input_size-1,output_size=output_size,depth=3)
 #model3 = RNNModel(time_step=output_time_step,output_time_step=output_time_step,input_size=input_size-1,output_size=output_size)
 
 
@@ -122,7 +122,7 @@ model1.fit(X,y,epochs=100,batch_size=32)
 pred=model1.predict(X)
 
 model1.trainable=False
-model= BoostingModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size)
+model= BoostingModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size,lr=0.001)
 
 model.fit(X,[y,y-pred],epochs=100,batch_size=32)
 

@@ -75,7 +75,7 @@ def CyclicControlModel(model1,model2,model3,lr=0.0001,time_step=1,input_size=3,o
 	input4=keras.layers.concatenate([input1,input2,input3])				#Concatenating Xt,et,Ut to predict Ut+1
 	#input4=keras.layers.concatenate([input1,input2])				#Concatenating Xt,et,Ut to predict Ut+1
 	output_a= model1(input4)							#Predicting Ut+1
-	output_a=Lambda(lambda x: (x * 4.0)-2.0)(output_a)
+	output_a=Lambda(lambda x: (x * 20.0)-10.0)(output_a)
 	input5=keras.layers.concatenate([input1,output_a],axis=-1)				#Concatenating Xt with Ut+1
 
 	if type(model2.output_shape) is list: 						#Finding if SystemID is Boosted Model

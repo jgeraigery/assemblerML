@@ -10,8 +10,12 @@ from Models.RNN import*
 from Operators.Ensemble import* 
 from Operators.Boosting import* 
 from Evaluation.Evaluate import* 
+from Operators.nalu import NALU
+from Operators.nac import NAC
+
+
 import pandas as pd
-Name="1Input1OutputEnsembleSS"
+Name="1Input1OutputEnsembleDense+Dense"
 
 DataFrame=pd.read_excel("RealData/10Hz-2.xlsx")
 
@@ -45,10 +49,10 @@ input_size=m.input_size
 output_size=m.output_size
 
 
-model1 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
-model2 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size,lr=0.001)
+model2 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
 
-model= EnsembleModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size)
+model= EnsembleModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size,lr=0.001)
 
 X=[]
 y=[]

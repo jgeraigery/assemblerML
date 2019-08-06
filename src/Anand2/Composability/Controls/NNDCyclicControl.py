@@ -28,13 +28,16 @@ input_size=m.input_size
 output_size=m.output_size
 
 #model1 = ControlDenseModel(time_step=time_step,output_time_step=output_time_step,input_size=4,output_size=1)
-model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size+1,output_size=1,output_function="linear",depth=3)
+model1 = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size+1,output_size=1,output_function="tanh",depth=3,scaling=10)
 model2 = RNNModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size,output_function="linear",depth=3)
 #model2 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
 model3 = DenseModel(time_step=output_time_step,output_time_step=time_step,input_size=output_size,output_size=input_size,output_function="linear",depth=3)
 
 X=[]
 y=[]
+
+controlaction=np.sin(np.arange(0,25000)*(np.pi/180))*10
+
 
 moving_input=np.zeros((time_step,input_size))
 moving_output=np.zeros((output_time_step,output_size))
@@ -46,7 +49,8 @@ for i in np.arange(0,25000):
 		#m.reset()
 		print ("Loop Number-",i)
 	stateTensor=m.state
-	controlInput[:]=m.getControlInput()
+	controlInput[:]=np.array(controlaction[i])
+	#controlInput[:]=m.getControlInput()
 	stateTensor=np.append(stateTensor,controlInput,-1)
 	outBar=m.step(controlInput[0][0])
 
@@ -66,9 +70,27 @@ for i in np.arange(0,25000):
 	X.append(moving_input2)
 	y.append(moving_output2)
 
+
 X=np.asarray(X)
 y=np.asarray(y)
 model2.fit(X,y,epochs=200,batch_size=512)
+
+
+plt.figure(1,figsize=(20,10))
+plt.subplot(2, 1,1)
+plt.plot(X[:,-1,0],c="k",linewidth="4",label="CurrentState")
+plt.ylabel("State:0")
+plt.legend(loc="upper right")
+
+plt.subplot(2, 1,2)
+plt.plot(X[:,-1,-1],c="r",label="ControlInput")
+plt.ylabel("Control Input")
+plt.xlabel("Time")
+plt.legend(loc="upper right")
+plt.show()
+plt.savefig("TImeDelayResopnse.svg")
+plt.clf()
+
 
 model2.trainable=False
 
@@ -122,7 +144,7 @@ for i in np.arange(0,800):
 
 
 
-	model.fit([moving_input,ref,controlInput],[ref[:,[-1],:],np.concatenate([moving_input,controlInput],axis=2)],epochs=20,verbose=0)
+	model.fit([moving_input,ref,controlInput],[ref[:,[-1],:],np.concatenate([moving_input,controlInput],axis=2)],epochs=100,verbose=0)
 	stateNew=np.array(stateTensor)	
 	stateTensor=m.step(controlInput[:,-1,:])
 	stateTensor=stateTensor.reshape(1,1,1)

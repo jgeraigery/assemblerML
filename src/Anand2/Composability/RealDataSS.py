@@ -4,6 +4,7 @@
 
 from Problems.DCMotor import *
 from Models.Dense import* 
+from Models.NALU import* 
 from Models.StateSpace import* 
 from Models.RNN import* 
 #from Models.LSTM import* 
@@ -13,7 +14,7 @@ from Operators.Boosting import*
 from Evaluation.Evaluate import* 
 import pandas as pd
 
-Name="1Input1OutputSS"
+Name="1Input1OutputDense"
 
 m = Motor()
 
@@ -24,7 +25,7 @@ input_size=m.input_size
 output_size=m.output_size
 
 
-model = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size)
+model = DenseModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size,lr=0.001,width=10,depth=3)
 
 
 
@@ -40,10 +41,20 @@ X1=np.load("RealData/X1Hz.npy")
 y1=np.load("RealData/y1Hz.npy")
 
 
-model.fit(X,[y],epochs=100,batch_size=32)
+reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5,
+                              patience=8, min_lr=0.00001,verbose=1)
+
+early_stop=EarlyStopping(monitor='loss', min_delta=0, patience=20, verbose=1)
+
+
+
+model.fit(X,[y],epochs=500,batch_size=32,callbacks=[reduce_lr,early_stop])
+
+model.save_weights("1Input1OutputDenseRealData.hdf5")
+#model.load_weights("1Input1OutputDenseRealData.hdf5")
+
 
 print(model.get_weights())
-print(model.get_weights)
 
 out=model.predict(X)
 

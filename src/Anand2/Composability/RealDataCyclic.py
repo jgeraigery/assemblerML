@@ -43,7 +43,8 @@ y1=np.load("RealData/y1Hz.npy")
 
 
 #model.fit(X,[y,np.concatenate([y,X[:,:,[-1]]],axis=-1)],epochs=400,batch_size=32)
-model.fit(X,[y,X],epochs=400,batch_size=32)
+#model1.fit(X,y,epochs=500,batch_size=512)
+model.fit(X,[y,X],epochs=1000,batch_size=32)
 
 print(model1.get_weights())
 print(model2.get_weights())
