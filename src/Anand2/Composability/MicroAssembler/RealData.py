@@ -16,112 +16,209 @@ from Operators.nalu import NALU
 from Operators.nac import NAC
 from scipy.stats import spearmanr
 
+from matplotlib.animation import FuncAnimation,FFMpegFileWriter
+
+
+matplotlib.rcParams['animation.ffmpeg_args'] = '-report'
+matplotlib.rcParams['animation.bitrate'] = 2000
+
+
 import pandas as pd
-Name="1Input1OutputRNNBoostedSS-W-30-D-10"
+Name="1Input1Output-Sphere-RNNBoostedSS"
 
-DataFrame=pd.read_csv("particles - 3.tsv",sep='\t',header=0)
-
-print(DataFrame.columns)
-
-DFT=DataFrame[DataFrame['mode']=="Tracking"]
-
-DFT.drop(columns=["mode","ctrl.img.filename","id","type","frame"])
-
-DataFrame=DFT
-
-time=np.asarray(DataFrame["t, s"])
-
-particle=np.asarray(DataFrame[["Px","Py","Pt"]])
-sprite=np.asarray(DataFrame[["Sx","Sy","St"]])
-target=np.asarray(DataFrame[["Tx","Ty","Tt"]])
-
-time_step=10
+time_step=1
 output_time_step=1
 
 input_size=10
 output_size=3
 
 
+#model1 = RNNModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size,lr=0.001,depth=10,width=100)
 model1 = SSModel(time_step=time_step,output_time_step=output_time_step,input_size=input_size,output_size=output_size,lr=0.001)
-model2 = RNNModel(time_step=output_time_step,output_time_step=output_time_step,input_size=output_size,output_size=output_size,lr=0.001,depth=3,width=10)
+model2 = RNNModel(time_step=output_time_step,output_time_step=output_time_step,input_size=output_size,output_size=output_size,lr=0.001)
 
 
-X=[]
-y=[]
 
-moving_input=np.zeros((time_step,input_size))
-moving_output=np.zeros((output_time_step,output_size))
+X=np.load("1Input1OutputSphereExtrapolationX2.npy")
+#X1=np.load("1Input1OutputX3.npy")
+y=np.load("1Input1OutputSphereExtrapolationy2.npy")
 
-for i in np.arange(0,len(time)-1):
-    # control input function
-	#if np.abs((time[i+1]-time[i])-0.017)>0.005:
-	if False:
-		continue
-	else:
-		stateTensor=np.append(particle[i],sprite[i])
-		stateTensor=np.append(stateTensor,target[i])
-		stateTensor=np.append(stateTensor,time[i+1]-time[i])
-		outBar=particle[i+1]
 
-		if time_step>1: #To shift Inputs to the left
-			moving_input[0:time_step-1,:]=moving_input[1:time_step,:]
-	
-		moving_input[time_step-1,:]=stateTensor
-		moving_input2=np.asarray(list(moving_input))
-	
-		if output_time_step>1:
-			moving_output[0:output_time_step-1,:]=moving_output[1:output_time_step,:]
-	
-		moving_output[output_time_step-1,:]=outBar-stateTensor[0:3]
-		moving_output2=np.asarray(list(moving_output))
-	
-		X.append(moving_input2)
-		y.append(moving_output2)
 
-X=np.asarray(X)
-y=np.asarray(y)
+'''
+X2=np.zeros((len(X)-20,10,10))
+y=np.zeros((len(X)-20,10,3))
+for i in range(10,len(X)-10):
+	X2[i-10,:,:]=np.array(np.reshape(X[i-10:i],(1,10,10)))
+        y[i-10,:,:]=np.array(np.reshape(X[i:i+10,:,0:3]-X[i-1:i+9,:,0:3],(1,10,3)))
 
+
+X=np.array(X2)
+
+
+X2=np.zeros((len(X1)-20,10,10))
+y1=np.zeros((len(X1)-20,10,3))
+for i in range(10,len(X1)-10):
+	X2[i-10,:,:]=np.array(np.reshape(X1[i-10:i],(1,10,10)))
+        y1[i-10,:,:]=np.array(np.reshape(X1[i:i+10,:,0:3]-X1[i-1:i+9,:,0:3],(1,10,3)))
+
+
+X1=np.array(X2)
+
+X=np.concatenate((X,X1),axis=0)
+y=np.concatenate((y,y1),axis=0)
+'''
 
 reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5,
-                              patience=8, min_lr=0.00001,verbose=1)
+                              patience=10, min_lr=0.00001,verbose=1)
 
-early_stop=EarlyStopping(monitor='loss', min_delta=0, patience=20, verbose=1)
-model1.fit(X,y,epochs=500,batch_size=512,callbacks=[reduce_lr,early_stop])
+early_stop=EarlyStopping(monitor='loss', min_delta=0.000005, patience=50, verbose=1)
+#model1.fit(X,y,epochs=1000,batch_size=512,callbacks=[reduce_lr,early_stop])
 
 pred=model1.predict(X)
 
-model1.trainabale=False
+model1.trainable=False
 
 model = BoostingModel(model1,model2,time_step=time_step,input_size=input_size,output_size=output_size,lr=0.001)
 
 print (model.summary())
 
 
-model.fit(X,[y,y-pred],epochs=500,batch_size=512,callbacks=[reduce_lr,early_stop])
+#model.fit(X,[y,y-pred],epochs=1000,batch_size=512,callbacks=[reduce_lr,early_stop])
 
 
-model.save_weights(Name+".hdf5")
-#model.load_weights(Name+".hdf5")
+#model.save_weights(Name+".hdf5")
+model.load_weights(Name+".hdf5")
 
-out1,out2=model.predict(X)
-
-out=out1+out2
-
-for i in range(3):
-	print(" Deep Model "+Name+" RMSE Error of State:",i,np.sqrt(np.mean((out[:,:,i]-y[:,:,i])**2)))
-	print("Alpha 0.5 R2 of State:",i,np.corrcoef(out[:,:,i].T,y[:,:,i].T))
-	print("Spearmanr of State:",i,spearmanr(out[:,:,i],y[:,:,i]))
+#Name="10Input10Output-Chiplets-RNNBoostedSS-W-30-D-10"
 
 
+#out1,out2=model.predict(X)
+
+#out=out1+out2
+
+out=model1.predict(X)
+for j in range(1):
+	for i in range(3):
+		print(" Deep Model "+Name+" RMSE Error of State:",j,i,np.sqrt(np.mean((out[:,j,i]-y[:,j,i])**2)))
+		print("Alpha 0.5 R2 of State:",i,np.corrcoef(out[:,j,i].T,y[:,j,i].T))
+		#print("Spearmanr of State:",i,spearmanr(out[:,0,i],y[:,0,i]))
 
 
 result=np.concatenate((out[:,[-1],:],y[:,[-1],:]+X[:,[-1],0:output_size],X[:,[-1],0:output_size]),axis=2)
 
 result=result.reshape(len(X),output_size*3)
 
-time=time.reshape(len(time),1)
-time=time[:len(time)-1]
+#time=time.reshape(len(time),1)
+#time=time[:len(time)-1]
+
+time=np.zeros((len(X),1))
 
 result=np.concatenate((result,time),axis=1)
-evaluate(result,output_size=output_size,Training_Time=0,name="Images/TrainData"+Name)
+evaluate(result,output_size=output_size,Training_Time=0,name="Images/TestData"+Name)
 
+
+#print(stop)
+
+outresults=[]
+out=np.zeros((1,time_step,input_size))
+out[:,:,:]=X[0,:,:]
+outresults.append(np.array(out[:,[0],:]))
+
+
+
+for i in range(len(X)-1):
+        #outnew=model1.predict(out)
+        outnew1,outnew2=model.predict(out)
+        outnew=outnew1+outnew2
+        out[:,0:time_step-1,:]=np.array(out[:,1:time_step,:])
+        out[:,-1,0]+=1*np.array(outnew[:,0,0])
+        out[:,-1,1]+=1*np.array(outnew[:,0,1])
+        out[:,-1,2]+=1*np.array(outnew[:,0,2])
+        out[:,:,3:]=X[i+1,:,3:]
+	if i%10000000==0 and i>0:
+	        out[:,:,:]=X[i+1,:,:]
+        outresults.append(np.array(out[:,[0],:]))
+        #time.sleep(2)
+        #print("Loop,Predicted,True",i,out[:,-1,0:3],X[i+1,-1,0:3])
+        #out[:,:,1]=X[i+1,:,1]
+        #out[:,:,0]=X[i+1,:,0]
+
+outresults=np.array(outresults)
+outresults=np.reshape(outresults,(len(outresults),1,input_size))
+
+
+for i in range(2):
+	print(" Deep Model "+Name+" RMSE Error of State:",i,np.sqrt(np.mean((outresults[:,0,i]-X[:,0,i])**2)))
+
+for i in range(2):
+	print(" Deep Model "+Name+" Last 5000 RMSE Error of State:",i,np.sqrt(np.mean((outresults[len(X)-5000:len(X),0,i]-X[len(X)-5000:len(X),0,i])**2)))
+
+
+plt.figure(1,figsize=(20,10))
+plt.subplot(2, 1,1)
+plt.plot(outresults[:,0,0],outresults[:,0,1],c="k",linewidth="4",label="Pred")
+plt.plot(X[:,0,0],X[:,0,1],c="r",label="True")
+plt.ylabel("PY")
+plt.xlabel("PX")
+plt.legend(loc="upper right")
+
+plt.subplot(2, 1, 2)
+plt.plot(X[:,0,3],X[:,0,4],c="r",label="Sprites")
+plt.scatter(X[0::1000,0,6],X[0::1000,0,7],c="b",label="Target")
+plt.ylabel("Sy")
+plt.xlabel("SX")
+plt.legend(loc="upper right")
+plt.show()
+plt.savefig(Name+".svg")
+plt.clf()
+
+
+plt.figure(1,figsize=(20,10))
+plt.subplot(2, 1,1)
+plt.plot(outresults[0:5000,0,0],outresults[0:5000,0,1],c="k",linewidth="4",label="Pred")
+plt.plot(X[0:5000,0,0],X[0:5000,0,1],c="r",label="True")
+plt.ylabel("PY")
+plt.xlabel("PX")
+plt.legend(loc="upper right")
+
+plt.subplot(2, 1, 2)
+plt.plot(X[0:5000,0,3],X[0:5000,0,4],c="r",label="Sprites")
+plt.scatter(X[0:5000:100,0,6],X[0:5000:100,0,7],c="b",label="Target")
+plt.ylabel("Sy")
+plt.xlabel("SX")
+plt.legend(loc="upper right")
+plt.show()
+plt.savefig(Name+"ExplodedView.svg")
+plt.clf()
+
+fig, ax = plt.subplots()
+xdata, ydata = [], []
+xpdata, ypdata = [], []
+ln, = plt.plot([], [], 'r', animated=True,label="True")
+ln2, = plt.plot([], [], 'k', animated=True,linewidth="4",label="Predicted")
+
+def init():
+	ax.set_xlim(0, 1600)
+	ax.set_ylim(0, 1600)
+	ax.set_ylabel("PY")
+	ax.set_xlabel("PX")
+	ax.legend()
+	ln.set_data(xdata,ydata)
+	ln2.set_data(xpdata,ypdata)
+	return ln,ln2,
+
+def update(frame):
+	xdata.append(frame[0])
+	ydata.append(frame[1])
+	xpdata.append(frame[2])
+	ypdata.append(frame[3])
+	ln.set_data(xdata, ydata)
+	ln2.set_data(xpdata,ypdata)
+	return ln,ln2,
+
+ani = FuncAnimation(fig, update, frames=np.concatenate((X[:10000:10,0,0:2],outresults[:10000:10,0,0:2]),axis=1),init_func=init, blit=True, interval =1,repeat=False)
+plt.show()
+
+mywriter = FFMpegFileWriter(fps=25,codec='mpeg4')
+ani.save("test.avi", writer=mywriter)

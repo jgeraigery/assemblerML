@@ -44,6 +44,8 @@ def custom_loss(output1,output2):
 	def custom_loss(y_true,y_pred):
 		return K.mean((y_pred-y_true)**2) + K.mean((output1-output2)**2) 
 	return custom_loss
+def custom_loss2(y_true,y_pred):
+	return 10*(K.mean((y_pred-y_true)**2))
 
 def CyclicModel(model1,model2,lr=0.001,time_step=1,input_size=3,output_size=2):
 	input = Input(batch_shape=(None,time_step,input_size))
@@ -69,5 +71,5 @@ def CyclicModel(model1,model2,lr=0.001,time_step=1,input_size=3,output_size=2):
 
 	model = Model(inputs=input, outputs=[output_a,output_b])					#Combining Models
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
-	model.compile(loss=custom_loss(output_a,output_c), optimizer=adam, metrics=['accuracy'])
+	model.compile(loss=[custom_loss2,custom_loss(output_a,output_c)], optimizer=adam, metrics=['accuracy'])
 	return model

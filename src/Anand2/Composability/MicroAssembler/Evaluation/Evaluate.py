@@ -28,56 +28,41 @@ def evaluate(result,output_size=6,Training_Time=0,name=False):
 	#result[0:Training_Time,output_size*2:output_size*3]=0
 	if name!=False:
 		plt.figure(1,figsize=(20,10))
-		for i in range(output_size):
-			plt.subplot(output_size+1, 1, i+1)
-			plt.plot(result[:,i]+result[:,output_size*2+i],c="k",linewidth="4",label="Pred")
-			plt.plot(result[:,output_size+i],c="r",label="True")
-			plt.ylabel("State:"+str(i))
-			plt.legend(loc="upper right")
-
-		plt.subplot(output_size+1, 1, i+2)
-		plt.plot(result[:,-1],result[:,-2],c="r",label="ControlInput")
-		plt.ylabel("Control Input")
-		plt.xlabel("Time")
+		plt.subplot(1, 1, 1)
+		plt.plot(result[:,0]+result[:,output_size*2+0],result[:,1]+result[:,output_size*2+1],c="k",linewidth="4",label="Pred")
+		plt.plot(result[:,output_size+0],result[:,output_size+1],c="r",label="True")
+		plt.ylabel("Position-Y")
+		plt.xlabel("Position-X")
 		plt.legend(loc="upper right")
 		plt.show()
 		plt.savefig(name+".svg")
 		plt.clf()
 
 		plt.figure(1,figsize=(20,10))
-		for i in range(output_size):
-			plt.subplot(output_size+1, 1, i+1)
-			plt.plot(result[:,i],c="k",linewidth="4",label="Pred")
-			plt.plot(result[:,output_size+i]-result2[:,output_size*2+i],c="r",label="True")
-			plt.ylabel("TD State:"+str(i))
-			plt.legend(loc="upper right")
-
-		plt.subplot(output_size+1, 1, i+2)
-		plt.plot( result[:,-1],result[:,-2],c="r",label="ControlInput")
-		plt.ylabel("Control Input")
-		plt.xlabel("Time")
+		plt.subplot(1, 1, 1)
+		plt.plot(result[:,0],result[:,1],c="k",linewidth="4",label="Pred")
+		plt.plot(result[:,output_size+0]-result2[:,output_size*2+0],result[:,output_size+1]-result2[:,output_size*2+1],c="r",label="True")
+		plt.ylabel("TD Position-Y")
+		plt.xlabel("TD Position-X")
 		plt.legend(loc="upper right")
 		plt.show()
+
 		plt.savefig(name+"TimeDifference.svg")
 		
 		plt.clf()
 
 
 		plt.figure(1,figsize=(20,10))
-		for i in range(output_size):
-			plt.subplot(output_size+1, 1, i+1)
-			plt.plot(result[:200,i],c="k",linewidth="4",label="Pred")
-			plt.plot(result[:200,output_size+i]-result2[:200,output_size*2+i],c="r",label="True")
-			plt.ylabel("TD State:"+str(i))
-			plt.legend(loc="upper right")
-
-		plt.subplot(output_size+1, 1, i+2)
-		plt.plot( result[:200,-1],result[:200,-2],c="r",label="ControlInput")
-		plt.ylabel("Control Input")
-		plt.xlabel("Time")
+		plt.subplot(1, 1, 1)
+		plt.plot(result[0:200,0],result[0:200,1],c="k",linewidth="4",label="Pred")
+		plt.plot(result[0:200,output_size+0]-result2[0:200,output_size*2+0],result[0:200,output_size+1]-result2[0:200,output_size*2+1],c="r",label="True")
+		plt.ylabel("TD Position-Y")
+		plt.xlabel("TD Position-X")
 		plt.legend(loc="upper right")
 		plt.show()
+
 		plt.savefig(name+"TimeDifferenceExploded.svg")
 		
 		plt.clf()
+
 
