@@ -32,7 +32,7 @@ parser.add_option("--network", dest="network", help="Path to  Trained H5 File", 
 if not options.test_path:   # if filename is not given
         parser.error('Error: path to test data must be specified. Pass --path to command line')
 
-if not options.base_network:   	# if Network is
+if not options.network:   	# if Network is
         parser.error('Error: Please pass test Network')
 
 #Taking Input annd Output Time_Step
@@ -121,6 +121,6 @@ for i in range(len(X)):
 	time[i]=np.sum(X[0:i+1,-1,-1])
 
 result=np.concatenate((result,time),axis=1)
-evaluate(result,output_size=output_size,Training_Time=0,name="Outputs/Training-"+Name)
+evaluate(result,output_size=output_size,Training_Time=0,name="Outputs/Testing-"+Name)
 
 
