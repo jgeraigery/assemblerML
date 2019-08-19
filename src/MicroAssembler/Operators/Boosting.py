@@ -46,7 +46,7 @@ def BoostingModel(model1,model2,lr=0.001,time_step=1,input_size=3,output_size=2)
 
 											#Checking if Model2 is Boosted Model and Raising Error
 	if type(model2.output_shape) is list:
-		raise ValueError( "Model-2 cannot be a Boosted Model Please make Model-1 as Boosted the Boosted Model")
+		raise ValueError( "Model-2 cannot be a Boosted Model Please make Model-1 as the Boosted Model")
 		return -1
 
 	input = Input(batch_shape=(None,time_step,input_size))
