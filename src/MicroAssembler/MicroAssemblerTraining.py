@@ -169,6 +169,7 @@ Name=Name.replace(".tsv","")
 Base=options.base_network.replace("Weights/","")
 Base=Base.replace(".h5","")
 Base=Base.replace(Name,"")
+Base=Base.replace("-Base-","")
 Name=Name + "-LB-" + str(time_step)
 Name=Name + "-FP-" + str(output_time_step)
 Name=Name + "-Base-" + Base
