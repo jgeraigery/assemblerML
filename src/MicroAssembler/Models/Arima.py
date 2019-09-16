@@ -11,7 +11,7 @@ from keras.optimizers import SGD
 import keras
 from keras.layers.advanced_activations import LeakyReLU, PReLU,ELU
 from keras.preprocessing.image import ImageDataGenerator
-from keras.layers import Convolution2D, Dense, Input, MaxPooling2D, Dropout, Flatten, ZeroPadding2D, Activation,LSTM,Bidirectional,Convolution1D,MaxPooling1D,Conv1D,SimpleRNN,Lambda
+from keras.layers import Convolution2D, Dense, Input, MaxPooling2D, Dropout, Flatten, ZeroPadding2D, Activation,LSTM,Bidirectional,Convolution1D,MaxPooling1D,Conv1D,SimpleRNN,Lambda,Reshape
 from keras.layers.pooling import AveragePooling2D,GlobalAveragePooling1D
 from keras.models import Model, Sequential
 from keras.utils.vis_utils import plot_model
@@ -27,13 +27,15 @@ from keras.utils import np_utils
 
 def ArimaModel(time_step=1,output_time_step=1,input_size=3,output_size=2,lr=0.001,width=10):
         input = Input(batch_shape=(None,time_step,input_size))
-        x=SimpleRNN(width,activation="linear",return_sequences=False)(input)
+        #x=SimpleRNN(width,activation="linear",return_sequences=False)(input)
+        x = LSTM(width, activation="linear", return_sequences=False)(input)
 
         output = Dense(output_time_step*output_size)(x) #Dense Layer of Size Number of Output Time Steps * Number of Features or States
-        output=Lambda(lambda xin :K.reshape(xin,(-1,output_time_step,output_size)))(output) #Reshaping
+        #output=Lambda(lambda xin :K.reshape(xin,(-1,output_time_step,output_size)))(output) #Reshaping
+        output=Reshape((output_time_step,output_size))(output)
 
         model = Model(inputs=input, outputs=output) #Creating Model
-	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False) #Optimizer
+        adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False) #Optimizer
         model.compile(loss="mse", optimizer=adam, metrics=['accuracy','mse']) #Compiling Model
         return model
 
