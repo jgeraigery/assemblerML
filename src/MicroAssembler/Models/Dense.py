@@ -11,7 +11,7 @@ from keras.optimizers import SGD
 import keras
 from keras.layers.advanced_activations import LeakyReLU, PReLU,ELU
 from keras.preprocessing.image import ImageDataGenerator
-from keras.layers import Convolution2D, Dense, Input, MaxPooling2D, Dropout, Flatten, ZeroPadding2D, Activation,LSTM,Bidirectional,Convolution1D,MaxPooling1D,Conv1D,SimpleRNN,Lambda,BatchNormalization
+from keras.layers import Convolution2D, Dense, Input, MaxPooling2D, Dropout, Flatten, ZeroPadding2D, Activation,LSTM,Bidirectional,Convolution1D,MaxPooling1D,Conv1D,SimpleRNN,Lambda,BatchNormalization,Flatten,Reshape
 from keras.layers.pooling import AveragePooling2D,GlobalAveragePooling1D
 from keras.models import Model, Sequential
 from keras.utils.vis_utils import plot_model
@@ -28,8 +28,8 @@ from keras.utils import np_utils
 
 def DenseModel(input_size=3,time_step=1,output_time_step=1,output_size=2,lr=0.0001,width=10,depth=1,batchnorm=False):
 	input = Input(batch_shape=(None,time_step,input_size))
-	inputnew=Lambda(lambda xin :K.reshape(xin,(-1,time_step*input_size)))(input)
-
+	#inputnew=Lambda(lambda xin :K.reshape(xin,(-1,time_step*input_size)))(input)
+	inputnew=Flatten()(input)
 	if batchnorm:
 		inputnew=BatchNormalization()(inputnew)
 
@@ -39,8 +39,8 @@ def DenseModel(input_size=3,time_step=1,output_time_step=1,output_size=2,lr=0.00
 		x = Dense(width,activation="relu",use_bias=False)(x)
 
 	output = Dense(output_time_step*output_size,activation="linear",use_bias=False)(x)
-	output=Lambda(lambda xin :K.reshape(xin,(-1,output_time_step,output_size)))(output)
-	
+	#output=Lambda(lambda xin :K.reshape(xin,(-1,output_time_step,output_size)))(output)
+	output=Reshape((output_time_step,output_size))(output)
 	model = Model(inputs=input, outputs=output)
 	adam=keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 
