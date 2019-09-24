@@ -55,13 +55,14 @@ DFT.drop(columns=["mode","ctrl.img.filename","id","type","frame"])
 DataFrame=DFT
 
 #Taking Time, Poisitions of Particle,Sprite,Target as numpy arrays
-time=np.asarray(DataFrame["t, s"])
+ctrl_time=np.asarray(DataFrame["ctrl state t, s"])
+proj_time=np.asarray(DataFrame["proj t, s"])
 particle=np.asarray(DataFrame[["Px","Py","Pt"]])
 sprite=np.asarray(DataFrame[["Sx","Sy","St"]])
 target=np.asarray(DataFrame[["Tx","Ty","Tt"]])
 
 #Input[Px,Py,Pt,Sx,Sy,St,Tx,Ty,Tt,DeltaTime] and Output [PxDeltaT,PyDeltaT,PtDeltaT] Size for the Model
-input_size=10
+input_size=8
 output_size=3
 
 
@@ -69,14 +70,18 @@ output_size=3
 X=[]
 moving_input=np.zeros((1,input_size))
 
-for i in np.arange(0,len(time)-2):
+for i in np.arange(0,len(ctrl_time)-2):
         #if np.abs((time[i+1]-time[i])-0.017)>0.005: #Use if you want to  make frequency of input to be the same
         if False:
                 continue
         else:
-                stateTensor=np.append(particle[i],sprite[i])
-                stateTensor=np.append(stateTensor,target[i])
-                stateTensor=np.append(stateTensor,time[i+1]-time[i])
+                #stateTensor=np.append(particle[i],sprite[i])
+                #stateTensor=np.append(stateTensor,target[i])
+                #stateTensor=np.append(stateTensor,time[i+1]-time[i])
+                stateTensor=np.append(particle[i+1], ctrl_time[i+1]);
+                stateTensor=np.append(stateTensor,sprite[i])
+                stateTensor=np.append(stateTensor, proj_time[i])
+                
                 moving_input[:,:]=stateTensor
                 moving_input2=np.asarray(list(moving_input))
 
@@ -84,11 +89,17 @@ for i in np.arange(0,len(time)-2):
 
 X=np.asarray(X)
 
+print("X[0] = ")
+print(X[0])
+
 
 X2=np.zeros((len(X)-2*time_step,time_step,input_size)) # Restructuring X based on Input Time Step and Y based on Output_time_step Note-Should do this more efficiently
 y=np.zeros((len(X)-2*time_step,output_time_step,output_size))
 for i in range(time_step,len(X)-time_step):
-    X2[i-time_step,:,:]=np.array(np.reshape(X[i-time_step:i],(1,time_step,10)))
+    X2[i-time_step,:,:]=np.array(np.reshape(X[i-time_step:i],(1,time_step,input_size)))
+    for j in range(0, time_step):
+        X2[i-time_step,j,3] -= X[i,0,3]
+        X2[i-time_step,j,7] -= X[i,0,3]
     y[i-time_step,:,:]=np.array(np.reshape(X[i:i+output_time_step,:,0:3]-X[i-1:i+output_time_step-1,:,0:3],(1,output_time_step,3)))
 
 
@@ -155,11 +166,11 @@ if options.boost_network is None:
     print (model.summary())
     
     print("X = ")
-    for i in range (0, 10):
+    for i in range (0, 3):
         print(X[i])
     
     print("y = ")
-    for i in range(0, 10):
+    for i in range(0, 3):
         print(y[i])
     
     model.fit(X,y,epochs=1000,batch_size=512,callbacks=[reduce_lr,early_stop])
