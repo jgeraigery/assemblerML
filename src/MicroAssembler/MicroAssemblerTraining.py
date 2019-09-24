@@ -21,6 +21,8 @@ from keras.utils import plot_model
 from optparse import OptionParser
 from keras_nalu.nalu import NALU
 
+from keras_export.convert_model import convert
+
 #Writing Parser for Python File
 parser = OptionParser()
 
@@ -203,10 +205,10 @@ elif options.boost_network is not None:
     Name=Name+"-Boost-"+options.boost_network
 
 model.save("Weights/"+Name+".h5", include_optimizer=False)
-plot_model(model, to_file="model.png", expand_nested=True, show_shapes=True)
+plot_model(model, to_file="Weights/"+Name+".png", expand_nested=True, show_shapes=True)
+convert("Weights/"+Name+".h5", "Weights/"+Name+".json")
 
 print ("predicting!")
-print("X0 = ", X[0])
 
 out=model.predict(X)
 print(out[0])
@@ -221,14 +223,14 @@ for j in range(1):
         #print("Spearman Rank Correlation of State:",i,spearmanr(out[:,0,i],y[:,0,i]))
 
 
-result=np.concatenate((out[:,[-1],:],y[:,[-1],:]+X[:,[-1],0:output_size],X[:,[-1],0:output_size]),axis=2) #Concatenating just last time step of Predicted Output, True Output y, and Input X
-result=result.reshape(len(X),output_size*3)
+#result=np.concatenate((out[:,[-1],:],y[:,[-1],:]+X[:,[-1],0:output_size],X[:,[-1],0:output_size]),axis=2) #Concatenating just last time step of Predicted Output, True Output y, and Input X
+#result=result.reshape(len(X),output_size*3)
 
-time=np.zeros((len(X),1))
-for i in range(len(X)):
-    time[i]=np.sum(X[0:i+1,-1,-1])
+#time=np.zeros((len(X),1))
+#for i in range(len(X)):
+#    time[i]=np.sum(X[0:i+1,-1,-1])
 
-result=np.concatenate((result,time),axis=1)
-evaluate(result,output_size=output_size,Training_Time=0,name="Outputs/Training-"+Name)
+#result=np.concatenate((result,time),axis=1)
+#evaluate(result,output_size=output_size,Training_Time=0,name="Outputs/Training-"+Name)
 
 
