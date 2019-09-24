@@ -30,10 +30,10 @@ class DPend():
         self.g = 9.81
 
     def getTh1dd(self):
-        return ( ((self.m1+self.m2)*self.g*np.sin(self.th1)) - (np.cos(self.th1-self.th2)*self.m2*self.g*np.sin(self.th2)) + (self.m2*self.l1*np.power(self.th1d,2)*np.cos(self.th1-self.th2)*np.sin(self.th1-self.th2)) + (self.m2*self.l2*self.th1d*np.sin(self.th1-self.th2)) )/((self.m2*self.l1*np.power(np.cos(self.th1-self.th2),2)) - ((self.m1+self.m2)*self.l1))
+        return ( 1 / ( (self.m2*self.l1*np.power(np.cos(self.th1-self.th2),2)) - ((self.m1+self.m2)*self.l1) ) ) * ( (self.m2*self.l2*self.th2d*np.sin(self.th1-self.th2)) + (self.g*(self.m1+self.m2)*np.sin(self.th1)) + (self.m2*self.l2*np.cos(self.th1-self.th2))*( ( (self.m2*self.l1*np.power(self.th1d,2)*np.sin(self.th1-self.th2)) - (self.m2*self.g*np.sin(self.th2)) ) / (self.m2*self.l2) ))
 
     def getTh2dd(self):
-        return - ( (self.m2*self.g*np.sin(self.th2)) + (self.m2*self.l1*self.th1dd*np.cos(self.th1-self.th2)) - (self.m2*self.l1*np.power(self.th1d,2)*np.sin(self.th1-self.th2)) ) / (self.m2*self.l2)
+        return - ( (self.m2*self.l1*self.th1dd*np.cos(self.th1-self.th2)) - (self.m2*self.l1*np.power(self.th1d,2)*np.sin(self.th1-self.th2)) + (self.m2*self.g*np.sin(self.th2)) ) / (self.m2*self.l2)
 
     def getM1X(self,th1):
         return self.l1*np.sin(th1)
@@ -59,12 +59,17 @@ class DPend():
             self.results[5,i] = self.th2dd
 
             #Calc Next State
+#            self.th1 += self.th1d * self.dt
+#            self.th2 += self.th2d * self.dt
+#            self.th1d += self.th1dd*self.dt
+#            self.th2d += self.th2dd*self.dt
             self.th1dd = self.getTh1dd()
             self.th2dd = self.getTh2dd()
+            self.th1 += self.th1d * self.dt
+            self.th2 += self.th2d * self.dt
             self.th1d += self.th1dd*self.dt
             self.th2d += self.th2dd*self.dt
-            self.th1 += self.th1d*self.dt
-            self.th2 += self.th2d*self.dt
+
             #print(self.results[:, i])
 
 
@@ -72,7 +77,7 @@ class DPend():
 
         #print(np.cos(self.th1-self.th2))
 
-    def animate(self):
+    def animate(self, step):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set(xlim=(-10,10),ylim=(-10,0))
@@ -81,13 +86,13 @@ class DPend():
         x2 = self.getM2X(self.results[0,:],self.results[1,:])
         y2 = self.getM2Y(self.results[0,:],self.results[1,:])
 
-        for i in range(self.results.shape[1]):
-            x = [0 , x1[i], x2[i]]
-            y = [0 , y1[i], y2[i]]
+        for i in range(int(self.results.shape[1]/step)):
+            x = [0 , x1[i*step], x2[i*step]]
+            y = [0 , y1[i*step], y2[i*step]]
 
             plt.plot(x, y, 'ro-')
-            ax.scatter(x1[0:i], y1[0:i])
-            ax.scatter(x2[0:i], y2[0:i])
+            ax.scatter(x1[0:i*step], y1[0:i*step])
+            ax.scatter(x2[0:i*step], y2[0:i*step])
             ax.set(xlim=(-15, 15), ylim=(-15, 15))
             plt.pause(.001)
             ax.clear()
@@ -115,9 +120,9 @@ class DPend():
         diffy.plot(T, y1-y2)
         plt.show()
 
-tester = DPend(10,1,10,1,np.pi/3,np.pi/2,0,0,.001,30,name="10-1-10-.5_" + dat.datetime.now().strftime("%Y%m%d-%H%M%S"))
+tester = DPend(1,2,3,1,np.pi/3,np.pi/2,0,0,.001,30,name="10-1-10-.5_" + dat.datetime.now().strftime("%Y%m%d-%H%M%S"))
 tester.simulate()
 tester.plot()
-#tester.animate()
+tester.animate(30)
 
-np.savetxt(tester.name+".csv", tester.results, fmt='%.18e', delimiter=',', newline='\n', header='', footer='', comments='# ', encoding=None)
+#np.savetxt(tester.name+".csv", tester.results, fmt='%.18e', delimiter=',', newline='\n', header='', footer='', comments='# ', encoding=None)
