@@ -57,8 +57,8 @@ DFT.drop(columns=["mode","ctrl.img.filename","id","type","frame"])
 DataFrame=DFT
 
 #Taking Time, Poisitions of Particle,Sprite,Target as numpy arrays
-ctrl_time=np.asarray(DataFrame["ctrl state t, s"])
-proj_time=np.asarray(DataFrame["proj t, s"])
+ctrl_time=np.asarray(DataFrame["sense t, s"])
+proj_time=np.asarray(DataFrame["act t, s"])
 particle=np.asarray(DataFrame[["Px","Py","Pt"]])
 sprite=np.asarray(DataFrame[["Sx","Sy","St"]])
 target=np.asarray(DataFrame[["Tx","Ty","Tt"]])
