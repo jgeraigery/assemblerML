@@ -58,28 +58,20 @@ class DPend():
             self.results[1,i] = self.th2
             self.results[2,i] = self.th1d
             self.results[3,i] = self.th2d
-
             self.results[4,i] = self.th1dd
             self.results[5,i] = self.th2dd
 
             #Calc Next State
-#            self.th1 += self.th1d * self.dt
-#            self.th2 += self.th2d * self.dt
-#            self.th1d += self.th1dd*self.dt
-#            self.th2d += self.th2dd*self.dt
             self.th1dd = self.getTh1dd()
             self.th2dd = self.getTh2dd()
             self.th1d += self.th1dd *self.dt
             self.th2d += self.th2dd *self.dt
             self.th1 += self.th1d * self.dt
             self.th2 += self.th2d * self.dt
-
-            #print(self.results[:, i])
         return
 
-        #print(np.cos(self.th1-self.th2))
-
     def animate(self, step):
+        length = 1500
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set(xlim=(-10,10),ylim=(-10,0))
@@ -88,18 +80,25 @@ class DPend():
         x2 = self.getM2X(self.results[0,:],self.results[1,:])
         y2 = self.getM2Y(self.results[0,:],self.results[1,:])
 
+        r = np.linspace(0, 1, length)
+        b = np.linspace(1, 0, length)
+        colors = ()
+
+        for i in range(b.shape[0]):
+            colors = colors + ((r[i], 0, b[i]),)
+
         for i in range(int(self.results.shape[1]/step)):
-            if (i*step <= 1500):
-                lowLim = 0
+            if i*step <= length:
+                lowlim = 0
             else:
-                lowLim = i*step - 1500
+                lowlim = i*step - length
 
             x = [0, x1[i*step], x2[i*step]]
             y = [0, y1[i*step], y2[i*step]]
 
             plt.plot(x, y, 'ro-')
-            ax.scatter(x1[lowLim:i*step], y1[lowLim:i*step], s = 1)
-            ax.scatter(x2[lowLim:i*step], y2[lowLim:i*step], s = 1)
+            ax.scatter(x1[lowlim:i*step], y1[lowlim:i*step], s=1, c=colors)
+            ax.scatter(x2[lowlim:i*step], y2[lowlim:i*step], s=1, c=colors)
             ax.set(xlim=(-15, 15), ylim=(-15, 15))
             plt.pause(.001)
             ax.clear()
@@ -127,14 +126,18 @@ class DPend():
         diffy.plot(T, y1-y2)
         plt.show()
 
+
 m1 = 2
 m2 = 3
 l1 = 2
 l2 = 3
 
-tester = DPend(m1,m2,l1,l2,np.pi/3,np.pi/2,0,0,.001,10,name= str(m1) + "-" + str(m2) + "-" + str(l1) + "-" + str(l2) + "_" + dat.datetime.now().strftime("%Y%m%d-%H%M%S"))
+tester = DPend(m1, m2, l1, l2, np.pi/3, np.pi/2, 0, 0, .001, 60, name=str(m1) + "-" + str(m2) + "-" + str(l1) + "-"
+               + str(l2) + "_" + dat.datetime.now().strftime("%Y%m%d-%H%M%S"))
+
 tester.simulate()
 tester.plot()
-tester.animate(30)
+tester.animate(50)
 
-np.savetxt(tester.name+".csv", tester.results, fmt='%.18e', delimiter=',', newline='\n', header='', footer='', comments='# ', encoding=None)
+np.savetxt(tester.name+".csv", tester.results, fmt='%.18e', delimiter=',', newline='\n', header='', footer='',
+           comments='# ', encoding=None)
