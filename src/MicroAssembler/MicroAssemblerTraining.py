@@ -29,6 +29,9 @@ parser = OptionParser()
 parser.add_option("-p", "--path", dest="training_path", help="Path to training data in the form of tsv")
 parser.add_option("-l", "--look_back", type="int", dest="look_back",help="Number of previous time_steps to predict next step ", default=1)
 parser.add_option("-f", "--predict_forward", type="int", dest="predict_forward",help="Number of future time_steps to predict", default=1)
+parser.add_option("-a", "--act_delay", type="int", dest="act_delay", help="Actuation delay, in discrete frames", default=1)
+parser.add_option("-s", "--sense_delay", type="int", dest="sense_delay",
+help="Sensing delay, in discrete frames", default=1)
 parser.add_option("--basenetwork", dest="base_network", help="Base network to use. Supports Physics, Linear, Arima, RNN, Dense or Path to Previous Trained H5 File", default='Linear')
 parser.add_option("--boostnetwork", dest="boost_network", help="Boosting network to use. Supports None,Linear,RNN, Dense", default=None)
 parser.add_option("--ensemblenetwork", dest="ensemble_network", help="Boosting network to use. Supports None,Linear,RNN, Dense", default=None)
@@ -94,15 +97,17 @@ X=np.asarray(X)
 print("X[0] = ")
 print(X[0])
 
+act_delay = options.act_delay
+sense_delay = options.sense_delay
 
 X2=np.zeros((len(X)-2*time_step,time_step,input_size)) # Restructuring X based on Input Time Step and Y based on Output_time_step Note-Should do this more efficiently
 y=np.zeros((len(X)-2*time_step,output_time_step,output_size))
 for i in range(time_step,len(X)-time_step):
     X2[i-time_step,:,:]=np.array(np.reshape(X[i-time_step:i],(1,time_step,input_size)))
     for j in range(0, time_step):
-        X2[i-time_step,j,3] -= X[i,0,3]
-        X2[i-time_step,j,7] -= X[i,0,3]
-    y[i-time_step,:,:]=np.array(np.reshape(X[i:i+output_time_step,:,0:3]-X[i-1:i+output_time_step-1,:,0:3],(1,output_time_step,3)))
+        X2[i-time_step,j,3] = X[i,0,3] - X2[i-time_step,j,3]
+        X2[i-time_step,j,7] = X[i,0,3] - X2[i-time_step,j,7]
+    y[i-time_step,:,:]=np.array(np.reshape(X[i+act_delay+sense_delay-1:i+act_delay+sense_delay-1+output_time_step,:,0:3]-X[i-1:i+output_time_step-1,:,0:3],(1,output_time_step,3)))
 
 
 X=np.array(X2)
